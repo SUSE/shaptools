@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/arbulu89/shaptools.svg?branch=master)](https://travis-ci.org/arbulu89/shaptools)
+[![Coverage Status](https://coveralls.io/repos/github/arbulu89/shaptools/badge.svg?branch=master)](https://coveralls.io/github/arbulu89/shaptools?branch=master)
+[![Maintainability](https://api.codeclimate.com/v1/badges/a6ad5be09f1a9cf19321/maintainability)](https://codeclimate.com/github/arbulu89/shaptools/maintainability)
+
 # SHAPUTILS
 
 Project created to expose an API with the SAP HANA platform major functionalities.

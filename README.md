@@ -2,15 +2,33 @@
 [![Coverage Status](https://coveralls.io/repos/github/arbulu89/shaptools/badge.svg?branch=master)](https://coveralls.io/github/arbulu89/shaptools?branch=master)
 [![Maintainability](https://api.codeclimate.com/v1/badges/a6ad5be09f1a9cf19321/maintainability)](https://codeclimate.com/github/arbulu89/shaptools/maintainability)
 
-# SHAPUTILS
+# SHAPTOOLS
 
 Project created to expose an API with the SAP HANA platform major functionalities.
 The main idea is to have an easy and friendly environment to deploy and configure
 the SAP HANA environment and enable System replication feature.
 
+Example of how to use the package:
+
+```python
+from shaptools import hana
+
+hana = hana.HanaInstance('prd', '00', 'Qwerty1234')
+
+if not hana.is_running():
+    hana.start()
+
+state = hana.get_sr_state()
+
+hana.create_user_key(
+  'backupkey', 'hana01:30013', 'SYSTEM', 'Qwerty1234', 'SYSTEMDB')
+hana.create_backup('backupkey', 'Qwerty1234', 'SYSTEMDB', 'backup')
+hana.sr_enable_primary('NUREMBERG')
+```
+
 ## Installation
 
-To install the **shaputils** package run the pip command:
+To install the **shaptools** package run the pip command:
 
     pip install .
 

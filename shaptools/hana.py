@@ -43,6 +43,7 @@ class HanaInstance:
         password (str): HANA instance password
     """
 
+    PATH = '/usr/sap/{sid}/HDB{inst}/'
     HANAUSER = '{sid}adm'
     SYNCMODES = ['sync', 'syncmem', 'async']
 
@@ -50,12 +51,14 @@ class HanaInstance:
         self._logger = logging.getLogger('{}{}'.format(sid, inst))
         self.sid = sid
         self.inst = inst
-        self.__password = password
+        self._password = password
+        """
         if not self.is_installed():
             raise HanaError(
                 'HANA is not installed properly sid {} and inst {} values'.format(
                     sid, inst))
         self._version = self.get_version()
+        """
 
     def _run_hana_command(self, cmd):
         """
@@ -70,10 +73,10 @@ class HanaInstance:
         """
         #TODO: Add absolute paths to hana commands using sid and inst number
         user = self.HANAUSER.format(sid=self.sid)
-        result = shell.execute_cmd(cmd, user, self.__password)
+        result = shell.execute_cmd(cmd, user, self._password)
 
         if result.returncode:
-            raise HanaError('Error running hana command: {}'.format(result.err))
+            raise HanaError('Error running hana command: {}'.format(result.cmd))
 
         return result
 
@@ -86,9 +89,10 @@ class HanaInstance:
         """
         user = self.HANAUSER.format(sid=self.sid)
         try:
-            result = shell.execute_cmd('HDB info', user, self.__password)
+            result = shell.execute_cmd('HDB info', user, self._password)
             return not result.returncode
-        except FileNotFoundError:
+        except EnvironmentError as err: #FileNotFoundError is not compatible with python2
+            self._logger.error(err)
             return False
 
     def is_running(self):
@@ -110,7 +114,9 @@ class HanaInstance:
         """
         cmd = 'HDB version'
         result = self._run_hana_command(cmd)
-        version_pattern = result.find_pattern('\s+=version:\s+(\d+.\d+.\d+).*')
+        version_pattern = result.find_pattern('\s+version:\s+(\d+.\d+.\d+).*')
+        if not version_pattern:
+            raise HanaError('Version pattern not found in command output')
         return version_pattern.group(1)
 
     def start(self):
@@ -127,7 +133,7 @@ class HanaInstance:
         cmd = 'HDB stop'
         self._run_hana_command(cmd)
 
-    def get_sr_status(self):
+    def get_sr_state(self):
         """
         Get system replication status in th current node
 
@@ -174,7 +180,7 @@ class HanaInstance:
             operation_mode (str): Operation mode
         """
         cmd = 'hdbnsutil -sr_register --name={} --remoteHost={} '\
-              '--remoteInstance={} --replicationMode={} --opreationMode={}'.format(
+              '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
                   name, remote_host, remote_instance, replication_mode, operation_mode)
         self._run_hana_command(cmd)
 
@@ -234,18 +240,18 @@ class HanaInstance:
         """
         #TODO: Version check
         cmd = 'hdbsql -U {} -d {} -p {} '\
-              'BACKUP DATA FOR FULL SYSTEM USING FILE (\'{}\')'.format(
-                  user_key, user_password, database, backup_name)
+              '\\"BACKUP DATA FOR FULL SYSTEM USING FILE (\'{}\')\\"'.format(
+                  user_key, database, user_password, backup_name)
         self._run_hana_command(cmd)
 
-
+"""
 # pylint:disable=C0103
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     hana = HanaInstance('prd', '00', 'Qwerty1234')
     if not hana.is_running():
         hana.start()
-    state = hana.get_sr_status()
+    state = hana.get_sr_state()
     if state == SrStates.PRIMARY:
         hana.sr_disable_primary()
     elif state == SrStates.SECONDARY:
@@ -254,4 +260,5 @@ if __name__ == '__main__':
 
     hana.create_backup('backupkey5', 'Qwerty1234', 'SYSTEMDB', 'backup')
     hana.sr_enable_primary('NUREMBERG')
-    logging.getLogger(__name__).info(hana.get_sr_status())
+    logging.getLogger(__name__).info(hana.get_sr_state())
+"""

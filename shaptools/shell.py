@@ -32,8 +32,8 @@ class ProcessResult:
         self._logger = logging.getLogger(__name__)
         self.cmd = cmd
         self.returncode = returncode
-        self.output = output
-        self.err = err
+        self.output = output.decode() # Make it compatiable with python2 and 3
+        self.err = err.decode()
 
     def show_output(self):
         """
@@ -100,9 +100,11 @@ def execute_cmd(cmd, user=None, password=None):
 
     proc = subprocess.Popen(
         shlex.split(cmd),
-        stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE,
-        encoding='utf8')
+        stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    # Make it compatiable with python2 and 3
+    if password:
+        password = password.encode()
     out, err = proc.communicate(input=password)
 
     result = ProcessResult(cmd, proc.returncode, out, err)

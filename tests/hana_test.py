@@ -38,6 +38,7 @@ class TestHana(unittest.TestCase):
         """
         Test setUp.
         """
+        self._hana = hana.HanaInstance('prd', '00', 'pass')
 
     def tearDown(self):
         """
@@ -49,3 +50,252 @@ class TestHana(unittest.TestCase):
         """
         Global tearDown.
         """
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_run_hana_command(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+
+        mock_execute.return_value = proc_mock
+
+        result = self._hana._run_hana_command('test command')
+
+        mock_execute.assert_called_once_with('test command', 'prdadm', 'pass')
+        self.assertEqual(proc_mock, result)
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_run_hana_command_error(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 1
+        proc_mock.cmd = 'updated command'
+
+        mock_execute.return_value = proc_mock
+        with self.assertRaises(hana.HanaError) as err:
+            self._hana._run_hana_command('test command')
+
+        mock_execute.assert_called_once_with('test command', 'prdadm', 'pass')
+        self.assertTrue(
+            'Error running hana command: {}'.format(
+                'updated command') in str(err.exception))
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_is_installed(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+        mock_execute.return_value = proc_mock
+
+        result = self._hana.is_installed()
+
+        mock_execute.assert_called_once_with('HDB info', 'prdadm', 'pass')
+
+        self.assertTrue(result)
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_is_installed_error(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 1
+        mock_execute.return_value = proc_mock
+
+        result = self._hana.is_installed()
+
+        mock_execute.assert_called_once_with('HDB info', 'prdadm', 'pass')
+
+        self.assertFalse(result)
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    @mock.patch('logging.Logger.error')
+    def test_is_installed_not_found(self, logger, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 1
+        error = EnvironmentError('test exception')
+        mock_execute.side_effect = error
+
+        result = self._hana.is_installed()
+
+        mock_execute.assert_called_once_with('HDB info', 'prdadm', 'pass')
+
+        self.assertFalse(result)
+        logger.assert_called_once_with(error)
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_is_running(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+        mock_execute.return_value = proc_mock
+
+        result = self._hana.is_running()
+
+        mock_execute.assert_called_once_with('pidof hdb.sapPRD_HDB00')
+        self.assertTrue(result)
+
+    @mock.patch('subprocess.Popen')
+    def test_get_version(self, mock_popen):
+        out = (b"Output text\n"
+               b"  version:  1.2.3.4.5\n"
+               b"line2")
+
+        mock_popen_inst = mock.Mock()
+        mock_popen_inst.returncode = 0
+        mock_popen_inst.communicate.return_value = (out, b'err')
+        mock_popen.return_value = mock_popen_inst
+
+        version = self._hana.get_version()
+
+        self.assertEqual('1.2.3', version)
+
+    @mock.patch('subprocess.Popen')
+    def test_get_version_error(self, mock_popen):
+        out = (b"Output text\n"
+               b"  versionn:  1.2.3.4.5\n"
+               b"line2")
+
+        mock_popen_inst = mock.Mock()
+        mock_popen_inst.returncode = 0
+        mock_popen_inst.communicate.return_value = (out, b'err')
+        mock_popen.return_value = mock_popen_inst
+
+        with self.assertRaises(hana.HanaError) as err:
+            self._hana.get_version()
+
+        self.assertTrue(
+            'Version pattern not found in command output' in str(err.exception))
+
+    def test_start(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+        self._hana.start()
+        mock_command.assert_called_once_with('HDB start')
+
+    def test_stop(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+        self._hana.stop()
+        mock_command.assert_called_once_with('HDB stop')
+
+    def test_get_sr_state_primary(self):
+
+        result_mock = mock.Mock()
+        result_mock.find_pattern.return_value = True
+
+        mock_command = mock.Mock()
+        mock_command.return_value = result_mock
+        self._hana._run_hana_command = mock_command
+
+        state = self._hana.get_sr_state()
+
+        result_mock.find_pattern.assert_called_once_with('.*mode: primary.*')
+        mock_command.assert_called_once_with('hdbnsutil -sr_state')
+
+        self.assertEqual(hana.SrStates.PRIMARY, state)
+
+    def test_get_sr_state_secondary(self):
+        result_mock = mock.Mock()
+        result_mock.find_pattern.side_effect = [False, True]
+
+        mock_command = mock.Mock()
+        mock_command.return_value = result_mock
+        self._hana._run_hana_command = mock_command
+
+        state = self._hana.get_sr_state()
+
+        mock_command.assert_called_once_with('hdbnsutil -sr_state')
+        result_mock.find_pattern.assert_has_calls([
+            mock.call('.*mode: primary.*'),
+            mock.call('.*mode: (sync|syncmem|async)')
+        ])
+        self.assertEqual(hana.SrStates.SECONDARY, state)
+
+    def test_get_sr_state_disabled(self):
+        result_mock = mock.Mock()
+        result_mock.find_pattern.side_effect = [False, False]
+
+        mock_command = mock.Mock()
+        mock_command.return_value = result_mock
+        self._hana._run_hana_command = mock_command
+
+        state = self._hana.get_sr_state()
+
+        mock_command.assert_called_once_with('hdbnsutil -sr_state')
+        result_mock.find_pattern.assert_has_calls([
+            mock.call('.*mode: primary.*'),
+            mock.call('.*mode: (sync|syncmem|async)')
+        ])
+        self.assertEqual(hana.SrStates.DISABLED, state)
+
+    def test_enable(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+        self._hana.sr_enable_primary('test')
+        mock_command.assert_called_once_with(
+            'hdbnsutil -sr_enable --name={}'.format('test'))
+
+    def test_disable(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+        self._hana.sr_disable_primary()
+        mock_command.assert_called_once_with('hdbnsutil -sr_disable')
+
+    def test_register(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+        self._hana.sr_register_secondary('test', 'host', '00', 'sync', 'ops')
+        mock_command.assert_called_once_with(
+            'hdbnsutil -sr_register --name={} --remoteHost={} '\
+            '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
+            'test', 'host', '00', 'sync', 'ops'))
+
+    def test_unregister(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+        self._hana.sr_unregister_secondary('test')
+        mock_command.assert_called_once_with(
+            'hdbnsutil -sr_unregister --name={}'.format('test'))
+
+    def test_check_user_key(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+
+        result = self._hana.check_user_key('key')
+        mock_command.assert_called_once_with(
+            'hdbuserstore list {}'.format('key'))
+        self.assertTrue(result)
+
+    def test_check_user_key_error(self):
+        mock_command = mock.Mock()
+        mock_command.side_effect = hana.HanaError('test error')
+        self._hana._run_hana_command = mock_command
+
+        result = self._hana.check_user_key('key')
+        mock_command.assert_called_once_with(
+            'hdbuserstore list {}'.format('key'))
+        self.assertFalse(result)
+
+    def test_create_user_key(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+
+        self._hana.create_user_key('key', 'envi', 'user', 'pass')
+        mock_command.assert_called_once_with(
+            'hdbuserstore set {key} {env}{db} {user} {passwd}'.format(
+            key='key', env='envi', db=None,
+            user='user', passwd='pass'))
+
+    def test_create_user_key_db(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+
+        self._hana.create_user_key('key', 'envi', 'user', 'pass', 'db')
+        mock_command.assert_called_once_with(
+            'hdbuserstore set {key} {env}{db} {user} {passwd}'.format(
+            key='key', env='envi', db='@db',
+            user='user', passwd='pass'))
+
+    def test_create_backup(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+
+        self._hana.create_backup('key', 'pass', 'db', 'backup')
+        mock_command.assert_called_once_with(
+            'hdbsql -U {} -d {} -p {} '\
+            '\\"BACKUP DATA FOR FULL SYSTEM USING FILE (\'{}\')\\"'.format(
+            'key', 'db', 'pass', 'backup'))

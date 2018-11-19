@@ -55,13 +55,13 @@ class TestShell(unittest.TestCase):
     @mock.patch('logging.Logger.error')
     def test_show_output(self, logger_error, logger_info):
 
-        out = ("Output text\n"
-                "line1\n"
-                "line2")
+        out = (b"Output text\n"
+               b"line1\n"
+               b"line2")
 
-        err = ("Error text\n"
-                "err1\n"
-                "err2")
+        err = (b"Error text\n"
+               b"err1\n"
+               b"err2")
 
         proc = shell.ProcessResult('test', 5, out, err)
         proc.show_output()
@@ -82,9 +82,9 @@ class TestShell(unittest.TestCase):
     @mock.patch('logging.Logger.error')
     def test_show_output_empty(self, logger_error, logger_info):
 
-        out = ""
+        out = b""
 
-        err = ""
+        err = b""
 
         proc = shell.ProcessResult('test', 5, out, err)
         proc.show_output()
@@ -94,10 +94,10 @@ class TestShell(unittest.TestCase):
 
     def test_find_pattern(self):
 
-        out = ("Output text\n"
-                "  line1  \n"
-                "line2")
-        err = ""
+        out = (b"Output text\n"
+               b"  line1  \n"
+               b"line2")
+        err = b""
 
         proc = shell.ProcessResult('test', 5, out, err)
         result = proc.find_pattern('.*line1.*')
@@ -105,10 +105,10 @@ class TestShell(unittest.TestCase):
 
     def test_find_pattern_false(self):
 
-        out = ("Output text\n"
-                "  line1  \n"
-                "line2")
-        err = ""
+        out = (b"Output text\n"
+               b"  line1  \n"
+               b"line2")
+        err = b""
 
         proc = shell.ProcessResult('test', 5, out, err)
         result = proc.find_pattern('.*line3.*')
@@ -121,6 +121,11 @@ class TestShell(unittest.TestCase):
         cmd = shell.format_su_cmd('hdbnsutil -sr_enable --name=PRAGUE', 'prdadm')
         self.assertEqual('su -lc "hdbnsutil -sr_enable --name=PRAGUE" prdadm', cmd)
 
+    def test_execute_cmd_popen(self):
+        # This test is used to check popen correct usage
+        result = shell.execute_cmd('ls -la')
+        self.assertEqual(result.returncode, 0)
+
     @mock.patch('shaptools.shell.ProcessResult')
     @mock.patch('subprocess.Popen')
     @mock.patch('logging.Logger.debug')
@@ -128,7 +133,7 @@ class TestShell(unittest.TestCase):
 
         mock_popen_inst = mock.Mock()
         mock_popen_inst.returncode = 5
-        mock_popen_inst.communicate.return_value = ('out', 'err')
+        mock_popen_inst.communicate.return_value = (b'out', b'err')
         mock_popen.return_value = mock_popen_inst
 
         mock_process_inst = mock.Mock()
@@ -141,11 +146,11 @@ class TestShell(unittest.TestCase):
 
         mock_popen.assert_called_once_with(
             ['ls', '-la'], stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-            stderr=subprocess.PIPE, encoding='utf8')
+            stderr=subprocess.PIPE)
 
         mock_popen_inst.communicate.assert_called_once_with(input=None)
 
-        mock_process.assert_called_once_with('ls -la', 5, 'out', 'err')
+        mock_process.assert_called_once_with('ls -la', 5, b'out', b'err')
 
         mock_process_inst.show_output.assert_called_once_with()
 
@@ -162,7 +167,7 @@ class TestShell(unittest.TestCase):
 
         mock_popen_inst = mock.Mock()
         mock_popen_inst.returncode = 5
-        mock_popen_inst.communicate.return_value = ('out', 'err')
+        mock_popen_inst.communicate.return_value = (b'out', b'err')
         mock_popen.return_value = mock_popen_inst
 
         mock_process_inst = mock.Mock()
@@ -177,11 +182,11 @@ class TestShell(unittest.TestCase):
 
         mock_popen.assert_called_once_with(
             ['updated', 'command'], stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-            stderr=subprocess.PIPE, encoding='utf8')
+            stderr=subprocess.PIPE)
 
-        mock_popen_inst.communicate.assert_called_once_with(input='pass')
+        mock_popen_inst.communicate.assert_called_once_with(input=b'pass')
 
-        mock_process.assert_called_once_with('updated command', 5, 'out', 'err')
+        mock_process.assert_called_once_with('updated command', 5, b'out', b'err')
 
         mock_process_inst.show_output.assert_called_once_with()
 

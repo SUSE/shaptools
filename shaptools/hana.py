@@ -48,6 +48,10 @@ class HanaInstance:
     SYNCMODES = ['sync', 'syncmem', 'async']
 
     def __init__(self, sid, inst, password):
+        if not all(isinstance(i, str) for i in [sid, inst, password]):
+            raise TypeError(
+                'provided sid, inst and password parameters must be str type')
+
         self._logger = logging.getLogger('{}{}'.format(sid, inst))
         self.sid = sid
         self.inst = inst
@@ -199,7 +203,7 @@ class HanaInstance:
         Check the use key existance
 
         Args:
-            key (str): User key name
+            key (str): Key name
 
         Returns: True if it exists, False otherwise
         """
@@ -213,13 +217,13 @@ class HanaInstance:
     def create_user_key(
             self, key, environment, user, user_password, database=None):
         """
-        Create user key entry for the database
+        Create or update user key entry for the database
         Args:
-            key (str): User key
-            environment (str): Key environment
+            key (str): Key name
+            environment (str): Database location (host:port)
             user (srt): User name
             user_password (str): User password
-            database (str, opt): Database name
+            database (str, opt): Database name in MDC environment
         """
         database = '@{}'.format(database) if database else None
         cmd = 'hdbuserstore set {key} {env}{db} {user} {passwd}'.format(
@@ -242,6 +246,16 @@ class HanaInstance:
         cmd = 'hdbsql -U {} -d {} -p {} '\
               '\\"BACKUP DATA FOR FULL SYSTEM USING FILE (\'{}\')\\"'.format(
                   user_key, database, user_password, backup_name)
+        self._run_hana_command(cmd)
+
+    def sr_cleanup(self, force=False):
+        """
+        Clean system replication state
+
+        Args:
+            force (bool): Force cleanup
+        """
+        cmd = 'hdbnsutil -sr_cleanup{}'.format(' --force' if force else '')
         self._run_hana_command(cmd)
 
 """

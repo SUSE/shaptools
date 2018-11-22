@@ -51,6 +51,29 @@ class TestHana(unittest.TestCase):
         Global tearDown.
         """
 
+    def test_init(self):
+        with self.assertRaises(TypeError) as err:
+            self._hana = hana.HanaInstance(1, '00', 'pass')
+
+        self.assertTrue(
+            'provided sid, inst and password parameters must be str type' in
+            str(err.exception))
+
+        with self.assertRaises(TypeError) as err:
+            self._hana = hana.HanaInstance('prd', 0, 'pass')
+
+        self.assertTrue(
+            'provided sid, inst and password parameters must be str type' in
+            str(err.exception))
+
+        with self.assertRaises(TypeError) as err:
+            self._hana = hana.HanaInstance('prd', '00', 1234)
+
+        self.assertTrue(
+            'provided sid, inst and password parameters must be str type' in
+            str(err.exception))
+
+
     @mock.patch('shaptools.shell.execute_cmd')
     def test_run_hana_command(self, mock_execute):
         proc_mock = mock.Mock()
@@ -299,3 +322,17 @@ class TestHana(unittest.TestCase):
             'hdbsql -U {} -d {} -p {} '\
             '\\"BACKUP DATA FOR FULL SYSTEM USING FILE (\'{}\')\\"'.format(
             'key', 'db', 'pass', 'backup'))
+
+    def test_sr_cleanup(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+
+        self._hana.sr_cleanup()
+        mock_command.assert_called_once_with('hdbnsutil -sr_cleanup')
+
+    def test_sr_cleanup_force(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+
+        self._hana.sr_cleanup(force=True)
+        mock_command.assert_called_once_with('hdbnsutil -sr_cleanup --force')

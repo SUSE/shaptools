@@ -139,7 +139,8 @@ class HanaInstance:
 
     def get_sr_state(self):
         """
-        Get system replication status in th current node
+        Get system replication state in th current node. This command is based
+        in the configuration files, so it returns that, not the actual status.
 
         Returns:
             SrStates: System replication state
@@ -197,6 +198,17 @@ class HanaInstance:
         """
         cmd = 'hdbnsutil -sr_unregister --name={}'.format(primary_name)
         self._run_hana_command(cmd)
+
+    def sr_changemode_secondary(self, new_mode):
+        """
+        Change secondary mode replication mode
+
+        Args:
+            new_mode (str): New mode between sync|syncmem|async
+        """
+        cmd = 'hdbnsutil -sr_changemode --mode={}'.format(new_mode)
+        self._run_hana_command(cmd)
+
 
     def check_user_key(self, key):
         """

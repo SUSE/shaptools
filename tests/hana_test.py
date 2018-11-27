@@ -274,6 +274,13 @@ class TestHana(unittest.TestCase):
         mock_command.assert_called_once_with(
             'hdbnsutil -sr_unregister --name={}'.format('test'))
 
+    def test_changemode(self):
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+        self._hana.sr_changemode_secondary('sync')
+        mock_command.assert_called_once_with(
+            'hdbnsutil -sr_changemode --mode={}'.format('sync'))
+
     def test_check_user_key(self):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command

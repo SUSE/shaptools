@@ -7,13 +7,17 @@ SAP HANA management module
 
 :since: 2018-11-15
 """
+#TODO: Modify code to work when multiple HANA instances are installed in the machine
 #TODO: Check backup already exist method
 #TODO: Copy ssfs files method? Add hostname? Or do this using salt
 #TODO: Split commands by version. Create backup for example
 
+from __future__ import print_function
 
 import logging
 import enum
+import fileinput
+import re
 
 from shaptools import shell
 
@@ -44,6 +48,7 @@ class HanaInstance:
     """
 
     PATH = '/usr/sap/{sid}/HDB{inst}/'
+    INSTALL_EXEC = '{software_path}/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm'
     HANAUSER = '{sid}adm'
     SYNCMODES = ['sync', 'syncmem', 'async']
 
@@ -56,13 +61,6 @@ class HanaInstance:
         self.sid = sid
         self.inst = inst
         self._password = password
-        """
-        if not self.is_installed():
-            raise HanaError(
-                'HANA is not installed properly sid {} and inst {} values'.format(
-                    sid, inst))
-        self._version = self.get_version()
-        """
 
     def _run_hana_command(self, cmd):
         """
@@ -98,6 +96,75 @@ class HanaInstance:
         except EnvironmentError as err: #FileNotFoundError is not compatible with python2
             self._logger.error(err)
             return False
+
+    def update_conf_file(self, conf_file, **kwargs):
+        """
+        Update config file parameters
+
+        Args:
+            conf_file (str): Path to the configuration file
+            kwargs (opt): Dictionary with the values to be updated. Use the exact
+                name of the SAP configuration file for the key
+
+        kwargs can be used in the next two modes:
+            update_conf_file(conf_file, sid='PRD', hostname='hana01')
+            update_conf_file(conf_file, **{'sid': 'PRD', 'hostname': 'hana01'})
+        """
+        for key, value in kwargs.items():
+            pattern = '^{key}=.*'.format(key=key)
+            new_value = '{key}={value}'.format(key=key, value=value)
+            for line in fileinput.input(conf_file, inplace=1):
+                line = re.sub(pattern, new_value, line)
+                print(line, end='')
+        return conf_file
+
+    def create_conf_file(
+            self, software_path, conf_file, root_user, root_password):
+        """
+        Create SAP HANA configuration file
+
+        Args:
+            software_path (str): Path where SAP HANA software is downloaded
+            conf_file (str): Path where configuration file will be created
+            root_user (str): Root user name
+            root_password (str): Root user password
+        """
+        executable = self.INSTALL_EXEC.format(software_path=software_path)
+        cmd = '{executable} --action=install --dump_configfile_template={conf_file}'.format(
+            executable=executable, conf_file=conf_file)
+        result = shell.execute_cmd(cmd, root_user, root_password)
+        if result.returncode:
+            raise HanaError('SAP HANA configuration file creation failed')
+        return conf_file
+
+    def install(self, software_path, conf_file, root_user, password):
+        """
+        Install SAP HANA platform providing a configuration file
+
+        Args:
+            software_path (str): Path where SAP HANA software is downloaded
+            conf_file (str): Path to the configuration file
+            root_user (str): Root user name
+            password (str): Root user password
+        """
+        # TODO: mount partition if needed
+        # TODO: do some integrity check stuff
+        executable = self.INSTALL_EXEC.format(software_path=software_path)
+        cmd = '{executable} -b --configfile={conf_file}'.format(
+            executable=executable, conf_file=conf_file)
+        result = shell.execute_cmd(cmd, root_user, password)
+        if result.returncode:
+            raise HanaError('SAP HANA installation failed')
+
+    def uninstall(self, root_user, password, installation_folder='/hana/shared'):
+        """
+        Uninstall SAP HANA platform
+        """
+        cmd = '{installation_folder}/{sid}/hdblcm/hdblcm --uninstall -b'.format(
+            installation_folder=installation_folder, sid=self.sid.upper())
+        result = shell.execute_cmd(cmd, root_user, password)
+        if result.returncode:
+            raise HanaError('SAP HANA uninstallation failed')
 
     def is_running(self):
         """
@@ -257,22 +324,3 @@ class HanaInstance:
         """
         cmd = 'hdbnsutil -sr_cleanup{}'.format(' --force' if force else '')
         self._run_hana_command(cmd)
-
-"""
-# pylint:disable=C0103
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    hana = HanaInstance('prd', '00', 'Qwerty1234')
-    if not hana.is_running():
-        hana.start()
-    state = hana.get_sr_state()
-    if state == SrStates.PRIMARY:
-        hana.sr_disable_primary()
-    elif state == SrStates.SECONDARY:
-        hana.stop()
-        hana.sr_unregister_secondary('NUREMBERG')
-
-    hana.create_backup('backupkey5', 'Qwerty1234', 'SYSTEMDB', 'backup')
-    hana.sr_enable_primary('NUREMBERG')
-    logging.getLogger(__name__).info(hana.get_sr_state())
-"""

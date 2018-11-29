@@ -97,7 +97,8 @@ class HanaInstance:
             self._logger.error(err)
             return False
 
-    def update_conf_file(self, conf_file, **kwargs):
+    @classmethod
+    def update_conf_file(cls, conf_file, **kwargs):
         """
         Update config file parameters
 
@@ -118,8 +119,9 @@ class HanaInstance:
                 print(line, end='')
         return conf_file
 
+    @classmethod
     def create_conf_file(
-            self, software_path, conf_file, root_user, root_password):
+            cls, software_path, conf_file, root_user, root_password):
         """
         Create SAP HANA configuration file
 
@@ -129,7 +131,7 @@ class HanaInstance:
             root_user (str): Root user name
             root_password (str): Root user password
         """
-        executable = self.INSTALL_EXEC.format(software_path=software_path)
+        executable = cls.INSTALL_EXEC.format(software_path=software_path)
         cmd = '{executable} --action=install --dump_configfile_template={conf_file}'.format(
             executable=executable, conf_file=conf_file)
         result = shell.execute_cmd(cmd, root_user, root_password)
@@ -137,7 +139,8 @@ class HanaInstance:
             raise HanaError('SAP HANA configuration file creation failed')
         return conf_file
 
-    def install(self, software_path, conf_file, root_user, password):
+    @classmethod
+    def install(cls, software_path, conf_file, root_user, password):
         """
         Install SAP HANA platform providing a configuration file
 
@@ -149,7 +152,7 @@ class HanaInstance:
         """
         # TODO: mount partition if needed
         # TODO: do some integrity check stuff
-        executable = self.INSTALL_EXEC.format(software_path=software_path)
+        executable = cls.INSTALL_EXEC.format(software_path=software_path)
         cmd = '{executable} -b --configfile={conf_file}'.format(
             executable=executable, conf_file=conf_file)
         result = shell.execute_cmd(cmd, root_user, password)

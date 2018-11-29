@@ -145,13 +145,13 @@ class TestHana(unittest.TestCase):
     def test_update_conf_file(self):
         pwd = os.path.dirname(os.path.abspath(__file__))
         shutil.copyfile(pwd+'/support/original.conf', '/tmp/copy.conf')
-        conf_file = self._hana.update_conf_file(
+        conf_file = hana.HanaInstance.update_conf_file(
             '/tmp/copy.conf', sid='PRD',
             password='Qwerty1234', system_user_password='Qwerty1234')
         self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf', conf_file))
 
         shutil.copyfile(pwd+'/support/original.conf', '/tmp/copy.conf')
-        conf_file = self._hana.update_conf_file(
+        conf_file = hana.HanaInstance.update_conf_file(
             '/tmp/copy.conf',
             **{'sid': 'PRD', 'password': 'Qwerty1234', 'system_user_password': 'Qwerty1234'})
         self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf', conf_file))
@@ -162,7 +162,7 @@ class TestHana(unittest.TestCase):
         proc_mock.returncode = 0
         mock_execute.return_value = proc_mock
 
-        conf_file = self._hana.create_conf_file(
+        conf_file = hana.HanaInstance.create_conf_file(
             'software_path', 'conf_file.conf', 'root', 'pass')
 
         mock_execute.assert_called_once_with(
@@ -178,7 +178,7 @@ class TestHana(unittest.TestCase):
         mock_execute.return_value = proc_mock
 
         with self.assertRaises(hana.HanaError) as err:
-            self._hana.create_conf_file(
+            hana.HanaInstance.create_conf_file(
                 'software_path', 'conf_file.conf', 'root', 'pass')
 
         mock_execute.assert_called_once_with(
@@ -195,7 +195,7 @@ class TestHana(unittest.TestCase):
         proc_mock.returncode = 0
         mock_execute.return_value = proc_mock
 
-        self._hana.install(
+        hana.HanaInstance.install(
             'software_path', 'conf_file.conf', 'root', 'pass')
 
         mock_execute.assert_called_once_with(
@@ -210,7 +210,7 @@ class TestHana(unittest.TestCase):
         mock_execute.return_value = proc_mock
 
         with self.assertRaises(hana.HanaError) as err:
-            self._hana.install(
+            hana.HanaInstance.install(
                 'software_path', 'conf_file.conf', 'root', 'pass')
 
         mock_execute.assert_called_once_with(

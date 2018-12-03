@@ -7,7 +7,7 @@ SAP HANA management module
 
 :since: 2018-11-15
 """
-#TODO: Modify code to work when multiple HANA instances are installed in the machine
+#TODO: Modify code to work when multiple HANA instances are installed
 #TODO: Check backup already exist method
 #TODO: Copy ssfs files method? Add hostname? Or do this using salt
 #TODO: Split commands by version. Create backup for example
@@ -104,8 +104,8 @@ class HanaInstance:
 
         Args:
             conf_file (str): Path to the configuration file
-            kwargs (opt): Dictionary with the values to be updated. Use the exact
-                name of the SAP configuration file for the key
+            kwargs (opt): Dictionary with the values to be updated.
+                Use the exact name of the SAP configuration file for the key
 
         kwargs can be used in the next two modes:
             update_conf_file(conf_file, sid='PRD', hostname='hana01')
@@ -132,8 +132,9 @@ class HanaInstance:
             root_password (str): Root user password
         """
         executable = cls.INSTALL_EXEC.format(software_path=software_path)
-        cmd = '{executable} --action=install --dump_configfile_template={conf_file}'.format(
-            executable=executable, conf_file=conf_file)
+        cmd = '{executable} --action=install '\
+            '--dump_configfile_template={conf_file}'.format(
+                executable=executable, conf_file=conf_file)
         result = shell.execute_cmd(cmd, root_user, root_password)
         if result.returncode:
             raise HanaError('SAP HANA configuration file creation failed')
@@ -163,8 +164,9 @@ class HanaInstance:
         """
         Uninstall SAP HANA platform
         """
-        cmd = '{installation_folder}/{sid}/hdblcm/hdblcm --uninstall -b'.format(
-            installation_folder=installation_folder, sid=self.sid.upper())
+        cmd = '{installation_folder}/{sid}/hdblcm/hdblcm '\
+            '--uninstall -b'.format(
+                installation_folder=installation_folder, sid=self.sid.upper())
         result = shell.execute_cmd(cmd, root_user, password)
         if result.returncode:
             raise HanaError('SAP HANA uninstallation failed')

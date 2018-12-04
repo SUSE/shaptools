@@ -16,6 +16,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import logging
 import unittest
+import filecmp
+import shutil
 
 import mock
 
@@ -139,6 +141,111 @@ class TestHana(unittest.TestCase):
 
         self.assertFalse(result)
         logger.assert_called_once_with(error)
+
+    def test_update_conf_file(self):
+        pwd = os.path.dirname(os.path.abspath(__file__))
+        shutil.copyfile(pwd+'/support/original.conf', '/tmp/copy.conf')
+        conf_file = hana.HanaInstance.update_conf_file(
+            '/tmp/copy.conf', sid='PRD',
+            password='Qwerty1234', system_user_password='Qwerty1234')
+        self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf', conf_file))
+
+        shutil.copyfile(pwd+'/support/original.conf', '/tmp/copy.conf')
+        conf_file = hana.HanaInstance.update_conf_file(
+            '/tmp/copy.conf',
+            **{'sid': 'PRD', 'password': 'Qwerty1234', 'system_user_password': 'Qwerty1234'})
+        self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf', conf_file))
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_create_conf_file(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+        mock_execute.return_value = proc_mock
+
+        conf_file = hana.HanaInstance.create_conf_file(
+            'software_path', 'conf_file.conf', 'root', 'pass')
+
+        mock_execute.assert_called_once_with(
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            '--action=install --dump_configfile_template={conf_file}'.format(
+                conf_file='conf_file.conf'), 'root', 'pass')
+        self.assertEqual('conf_file.conf', conf_file)
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_create_conf_file_error(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 1
+        mock_execute.return_value = proc_mock
+
+        with self.assertRaises(hana.HanaError) as err:
+            hana.HanaInstance.create_conf_file(
+                'software_path', 'conf_file.conf', 'root', 'pass')
+
+        mock_execute.assert_called_once_with(
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            '--action=install --dump_configfile_template={conf_file}'.format(
+                conf_file='conf_file.conf'), 'root', 'pass')
+
+        self.assertTrue(
+            'SAP HANA configuration file creation failed' in str(err.exception))
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_install(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+        mock_execute.return_value = proc_mock
+
+        hana.HanaInstance.install(
+            'software_path', 'conf_file.conf', 'root', 'pass')
+
+        mock_execute.assert_called_once_with(
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            '-b --configfile={conf_file}'.format(
+                conf_file='conf_file.conf'), 'root', 'pass')
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_install_error(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 1
+        mock_execute.return_value = proc_mock
+
+        with self.assertRaises(hana.HanaError) as err:
+            hana.HanaInstance.install(
+                'software_path', 'conf_file.conf', 'root', 'pass')
+
+        mock_execute.assert_called_once_with(
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            '-b --configfile={conf_file}'.format(
+                conf_file='conf_file.conf'), 'root', 'pass')
+
+        self.assertTrue(
+            'SAP HANA installation failed' in str(err.exception))
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_uninstall(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+        mock_execute.return_value = proc_mock
+
+        self._hana.uninstall('root', 'pass')
+
+        mock_execute.assert_called_once_with(
+            '/hana/shared/PRD/hdblcm/hdblcm --uninstall -b', 'root', 'pass')
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_uninstall_error(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 1
+        mock_execute.return_value = proc_mock
+
+        with self.assertRaises(hana.HanaError) as err:
+            self._hana.uninstall('root', 'pass', 'path')
+
+        mock_execute.assert_called_once_with(
+            'path/PRD/hdblcm/hdblcm --uninstall -b', 'root', 'pass')
+
+        self.assertTrue(
+            'SAP HANA uninstallation failed' in str(err.exception))
 
     @mock.patch('shaptools.shell.execute_cmd')
     def test_is_running(self, mock_execute):

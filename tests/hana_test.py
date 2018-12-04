@@ -19,7 +19,10 @@ import unittest
 import filecmp
 import shutil
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 from shaptools import hana
 

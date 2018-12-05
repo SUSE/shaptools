@@ -190,7 +190,7 @@ class HanaInstance:
         """
         cmd = 'HDB version'
         result = self._run_hana_command(cmd)
-        version_pattern = result.find_pattern('\s+version:\s+(\d+.\d+.\d+).*')
+        version_pattern = result.find_pattern(r'\s+version:\s+(\d+.\d+.\d+).*')
         if not version_pattern:
             raise HanaError('Version pattern not found in command output')
         return version_pattern.group(1)

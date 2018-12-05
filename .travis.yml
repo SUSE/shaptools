@@ -1,8 +1,11 @@
 language: python
-python:
-    - "2.7"
-    - "3.6"
+matrix:
+  include:
+    - python: 2.7
+      env: TOXENV=py27-coveralls
+    - python: 3.6
+      env: TOXENV=py36-coveralls
 install:
-    - pip install tox-travis
+    - pip install tox
 script:
-    - tox -e coveralls
+    - tox

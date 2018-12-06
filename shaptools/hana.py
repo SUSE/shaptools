@@ -149,12 +149,11 @@ class HanaInstance:
         Returns:
             SrStates: System replication state
         """
-        cmd = 'hdbnsutil -sr_state'
-        result = self._run_hana_command(cmd)
-
-        if result.find_pattern('.*mode: primary.*'):
+        state = self.get_sr_state_details()
+        mode = state.get("mode", "unknown")
+        if mode == "primary":
             return SrStates.PRIMARY
-        if result.find_pattern('.*mode: ({})'.format('|'.join(self.SYNCMODES))):
+        if mode in self.SYNCMODES:
             return SrStates.SECONDARY
         return SrStates.DISABLED
 

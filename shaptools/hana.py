@@ -79,7 +79,7 @@ class HanaInstance:
         user = self.HANAUSER.format(sid=self.sid)
         result = shell.execute_cmd(cmd, user, self._password)
 
-        if result.returncode:
+        if result.returncode != 0:
             raise HanaError('Error running hana command: {}'.format(result.cmd))
 
         return result

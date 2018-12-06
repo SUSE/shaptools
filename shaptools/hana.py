@@ -14,6 +14,7 @@ SAP HANA management module
 
 import logging
 import enum
+import re
 
 from shaptools import shell
 
@@ -139,8 +140,11 @@ class HanaInstance:
 
     def get_sr_state(self):
         """
-        Get system replication state in th current node. This command is based
-        in the configuration files, so it returns that, not the actual status.
+        Get system replication state details for the current node.
+
+        Note:
+        The command reads the status from the configuration files
+        and so the reported status may not match the actual status.
 
         Returns:
             SrStates: System replication state
@@ -153,6 +157,28 @@ class HanaInstance:
         if result.find_pattern('.*mode: ({})'.format('|'.join(self.SYNCMODES))):
             return SrStates.SECONDARY
         return SrStates.DISABLED
+
+    def get_sr_state_details(self):
+        """
+        Get system replication state details for the current node.
+
+        Note:
+        The command reads the status from the configuration files
+        and so the reported status may not match the actual status.
+
+        Returns:
+            dict containing details about replication state.
+        """
+        cmd = 'hdbnsutil -sr_state'
+        result = self._run_hana_command(cmd)
+        state = {}
+        for line in result.output.splitlines():
+            if "Site Mappings:" in line or "Host Mappings:" in line:
+                break
+            m = re.match(r'^\s*([^:]+):\s+(.*)$', line.strip())
+            if m is not None:
+                state[m.group(1)] = m.group(2)
+        return state
 
     def sr_enable_primary(self, name):
         """

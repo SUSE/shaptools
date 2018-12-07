@@ -62,12 +62,13 @@ class HanaInstance:
         self.inst = inst
         self._password = password
 
-    def _run_hana_command(self, cmd):
+    def _run_hana_command(self, cmd, exception=True):
         """
         Run hana command
 
         Args:
             cmd (str): HANA command
+            exception (boolean): Raise HanaError non-zero return code (default true)
 
         Returns:
             ProcessResult: ProcessResult instance storing subprocess returncode,
@@ -77,7 +78,7 @@ class HanaInstance:
         user = self.HANAUSER.format(sid=self.sid)
         result = shell.execute_cmd(cmd, user, self._password)
 
-        if result.returncode != 0:
+        if exception and result.returncode != 0:
             raise HanaError('Error running hana command: {}'.format(result.cmd))
 
         return result
@@ -368,3 +369,50 @@ class HanaInstance:
         """
         cmd = 'hdbnsutil -sr_cleanup{}'.format(' --force' if force else '')
         self._run_hana_command(cmd)
+
+    def _parse_replication_output(self, output):
+        """
+        Utility function to parse output of
+        systemReplicationStatus.py
+        TODO: Parse table data
+        TODO: Parse local state
+        """
+        return {}
+
+    def get_replication_status(self):
+        """
+        Get system replication status (parsed output
+        of systemReplicationStatus.py).
+        """
+        cmd = 'HDBSettings.sh systemReplicationStatus.py'
+        result = self._run_hana_command(cmd, exception=False)
+        status = self._parse_replication_output(result.output)
+        rcmap = {
+            10: "No System Replication",
+            11: "Error",
+            12: "Unknown",
+            13: "Initializing",
+            14: "Syncing",
+            15: "Active"
+        }
+        status["status"] = rcmap.get(result.returncode, "Unknown")
+        return status
+
+"""
+# pylint:disable=C0103
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    hana = HanaInstance('prd', '00', 'Qwerty1234')
+    if not hana.is_running():
+        hana.start()
+    state = hana.get_sr_state()
+    if state == SrStates.PRIMARY:
+        hana.sr_disable_primary()
+    elif state == SrStates.SECONDARY:
+        hana.stop()
+        hana.sr_unregister_secondary('NUREMBERG')
+
+    hana.create_backup('backupkey5', 'Qwerty1234', 'SYSTEMDB', 'backup')
+    hana.sr_enable_primary('NUREMBERG')
+    logging.getLogger(__name__).info(hana.get_sr_state())
+"""

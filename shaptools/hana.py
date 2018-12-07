@@ -395,6 +395,8 @@ class HanaInstance:
             14: "Syncing",
             15: "Active"
         }
+        # TODO: Handle HANA bug where non-working SR resulted in RC 15
+        # (see SAPHana RA)
         status["status"] = rcmap.get(result.returncode, "Unknown")
         return status
 

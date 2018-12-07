@@ -18,7 +18,10 @@ import logging
 import unittest
 import subprocess
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 from shaptools import shell
 

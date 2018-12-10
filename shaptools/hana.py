@@ -190,8 +190,9 @@ class HanaInstance:
         """
         cmd = 'HDB version'
         result = self._run_hana_command(cmd)
-        version_pattern = result.find_pattern(r'\s+version:\s+(\d+.\d+.\d+).*')
-        if not version_pattern:
+        version_pattern = shell.find_pattern(
+            r'\s+version:\s+(\d+.\d+.\d+).*', result.output)
+        if version_pattern is None:
             raise HanaError('Version pattern not found in command output')
         return version_pattern.group(1)
 
@@ -211,7 +212,7 @@ class HanaInstance:
 
     def get_sr_state(self):
         """
-        Get system replication state details for the current node.
+        Get system replication state for the current node.
 
         Note:
         The command reads the status from the configuration files
@@ -220,11 +221,13 @@ class HanaInstance:
         Returns:
             SrStates: System replication state
         """
-        state = self.get_sr_state_details()
-        mode = state.get("mode", "unknown")
-        if mode == "primary":
+        cmd = 'hdbnsutil -sr_state'
+        result = self._run_hana_command(cmd)
+
+        if shell.find_pattern('.*mode: primary.*', result.output) is not None:
             return SrStates.PRIMARY
-        if mode in self.SYNCMODES:
+        if shell.find_pattern('.*mode: ({})'.format('|'.join(self.SYNCMODES)),
+                              result.output) is not None:
             return SrStates.SECONDARY
         return SrStates.DISABLED
 
@@ -245,9 +248,9 @@ class HanaInstance:
         for line in result.output.splitlines():
             if "Site Mappings:" in line or "Host Mappings:" in line:
                 break
-            m = re.match(r'^\s*([^:]+):\s+(.*)$', line.strip())
-            if m is not None:
-                state[m.group(1)] = m.group(2)
+            data = re.match(r'^\s*([^:]+):\s+(.*)$', line.strip())
+            if data is not None:
+                state[data.group(1)] = data.group(2)
         return state
 
     def sr_enable_primary(self, name):

@@ -305,27 +305,29 @@ class TestHana(unittest.TestCase):
         self._hana.stop()
         mock_command.assert_called_once_with('HDB stop')
 
+    @mock.patch('shaptools.shell.find_pattern', mock.Mock(return_value=object()))
     def test_get_sr_state_primary(self):
         mock_command = mock.Mock()
-        mock_command.return_value = {"mode": "primary"}
-        self._hana.get_sr_state_details = mock_command
+        self._hana._run_hana_command = mock_command
         state = self._hana.get_sr_state()
         self.assertEqual(hana.SrStates.PRIMARY, state)
+        mock_command.assert_called_once_with('hdbnsutil -sr_state')
 
+    @mock.patch('shaptools.shell.find_pattern', mock.Mock(side_effect = [None, object()]))
     def test_get_sr_state_secondary(self):
-        for mode in self._hana.SYNCMODES:
-            mock_command = mock.Mock()
-            mock_command.return_value = {"mode": mode}
-            self._hana.get_sr_state_details = mock_command
-            state = self._hana.get_sr_state()
-            self.assertEqual(hana.SrStates.SECONDARY, state)
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+        state = self._hana.get_sr_state()
+        self.assertEqual(hana.SrStates.SECONDARY, state)
+        mock_command.assert_called_once_with('hdbnsutil -sr_state')
 
+    @mock.patch('shaptools.shell.find_pattern', mock.Mock(return_value=None))
     def test_get_sr_state_disabled(self):
         mock_command = mock.Mock()
-        mock_command.return_value = {}
-        self._hana.get_sr_state_details = mock_command
+        self._hana._run_hana_command = mock_command
         state = self._hana.get_sr_state()
         self.assertEqual(hana.SrStates.DISABLED, state)
+        mock_command.assert_called_once_with('hdbnsutil -sr_state')
 
     def test_enable(self):
         mock_command = mock.Mock()
@@ -498,7 +500,7 @@ Tier of NUREMBERG: 1
 
 Replication mode of NUREMBERG: primary
 
-Operation mode of NUREMBERG: 
+Operation mode of NUREMBERG:
 
 done.
 

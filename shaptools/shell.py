@@ -29,38 +29,41 @@ class ProcessResult:
     """
 
     def __init__(self, cmd, returncode, output, err):
-        self._logger = logging.getLogger(__name__)
         self.cmd = cmd
         self.returncode = returncode
         self.output = output.decode() # Make it compatiable with python2 and 3
         self.err = err.decode()
 
-    def show_output(self):
-        """
-        Log process stdout and stderr text
-        """
-        if self.output:
-            for line in self.output.splitlines():
-                self._logger.info(line)
-        if self.err:
-            for line in self.err.splitlines():
-                self._logger.error(line)
 
-    def find_pattern(self, pattern):
-        """
-        Find pattern in output string
+def log_command_results(stdout, stderr):
+    """
+    Log process stdout and stderr text
+    """
+    logger = logging.getLogger(__name__)
+    if stdout:
+        for line in stdout.splitlines():
+            logger.info(line)
+    if stderr:
+        for line in stderr.splitlines():
+            logger.error(line)
 
-        Args:
-            pattern (str): Regular expression pattern
 
-        Returns:
-            bool: True if the pattern is found, False otherwise
-        """
-        for line in self.output.splitlines():
-            found = re.match(pattern, line)
-            if found:
-                return found
-        return False
+def find_pattern(pattern, text):
+    """
+    Find pattern in multiline string
+
+    Args:
+        pattern (str): Regular expression pattern
+        text (str): string to search in
+
+    Returns:
+        Match object if the pattern is found, None otherwise
+    """
+    for line in text.splitlines():
+        found = re.match(pattern, line)
+        if found:
+            return found
+    return None
 
 
 def format_su_cmd(cmd, user):
@@ -108,6 +111,6 @@ def execute_cmd(cmd, user=None, password=None):
     out, err = proc.communicate(input=password)
 
     result = ProcessResult(cmd, proc.returncode, out, err)
-    result.show_output()
+    log_command_results(out, err)
 
     return result

@@ -190,8 +190,9 @@ class HanaInstance:
         """
         cmd = 'HDB version'
         result = self._run_hana_command(cmd)
-        version_pattern = result.find_pattern(r'\s+version:\s+(\d+.\d+.\d+).*')
-        if not version_pattern:
+        version_pattern = shell.find_pattern(
+            r'\s+version:\s+(\d+.\d+.\d+).*', result.output)
+        if version_pattern is None:
             raise HanaError('Version pattern not found in command output')
         return version_pattern.group(1)
 
@@ -211,7 +212,7 @@ class HanaInstance:
 
     def get_sr_state(self):
         """
-        Get system replication status in th current node
+        Get system replication status in the current node
 
         Returns:
             SrStates: System replication state
@@ -219,9 +220,10 @@ class HanaInstance:
         cmd = 'hdbnsutil -sr_state'
         result = self._run_hana_command(cmd)
 
-        if result.find_pattern('.*mode: primary.*'):
+        if shell.find_pattern('.*mode: primary.*', result.output) is not None:
             return SrStates.PRIMARY
-        if result.find_pattern('.*mode: ({})'.format('|'.join(self.SYNCMODES))):
+        if shell.find_pattern('.*mode: ({})'.format('|'.join(self.SYNCMODES)),
+                              result.output) is not None:
             return SrStates.SECONDARY
         return SrStates.DISABLED
 

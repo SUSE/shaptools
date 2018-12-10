@@ -56,18 +56,15 @@ class TestShell(unittest.TestCase):
 
     @mock.patch('logging.Logger.info')
     @mock.patch('logging.Logger.error')
-    def test_show_output(self, logger_error, logger_info):
+    def test_log_results(self, logger_error, logger_info):
+        out = ("Output text\n"
+               "line1\n"
+               "line2")
+        err = ("Error text\n"
+               "err1\n"
+               "err2")
 
-        out = (b"Output text\n"
-               b"line1\n"
-               b"line2")
-
-        err = (b"Error text\n"
-               b"err1\n"
-               b"err2")
-
-        proc = shell.ProcessResult('test', 5, out, err)
-        proc.show_output()
+        shell.log_command_results(out, err)
 
         logger_info.assert_has_calls([
             mock.call('Output text'),
@@ -84,38 +81,23 @@ class TestShell(unittest.TestCase):
     @mock.patch('logging.Logger.info')
     @mock.patch('logging.Logger.error')
     def test_show_output_empty(self, logger_error, logger_info):
-
-        out = b""
-
-        err = b""
-
-        proc = shell.ProcessResult('test', 5, out, err)
-        proc.show_output()
-
+        shell.log_command_results("", "")
         self.assertEqual(0, logger_info.call_count)
         self.assertEqual(0, logger_error.call_count)
 
     def test_find_pattern(self):
+        out = ("Output text\n"
+               "  line1  \n"
+               "line2")
+        result = shell.find_pattern('.*line1.*', out)
+        self.assertIsNotNone(result)
 
-        out = (b"Output text\n"
-               b"  line1  \n"
-               b"line2")
-        err = b""
-
-        proc = shell.ProcessResult('test', 5, out, err)
-        result = proc.find_pattern('.*line1.*')
-        self.assertTrue(result)
-
-    def test_find_pattern_false(self):
-
-        out = (b"Output text\n"
-               b"  line1  \n"
-               b"line2")
-        err = b""
-
-        proc = shell.ProcessResult('test', 5, out, err)
-        result = proc.find_pattern('.*line3.*')
-        self.assertFalse(result)
+    def test_find_pattern_fail(self):
+        out = ("Output text\n"
+               "  line1  \n"
+               "line2")
+        result = shell.find_pattern('.*line3.*', out)
+        self.assertIsNone(result)
 
     def test_format_su_cmd(self):
         cmd = shell.format_su_cmd('ls -la', 'test')
@@ -155,8 +137,6 @@ class TestShell(unittest.TestCase):
 
         mock_process.assert_called_once_with('ls -la', 5, b'out', b'err')
 
-        mock_process_inst.show_output.assert_called_once_with()
-
         self.assertEqual(mock_process_inst, result)
 
     @mock.patch('shaptools.shell.format_su_cmd')
@@ -190,7 +170,5 @@ class TestShell(unittest.TestCase):
         mock_popen_inst.communicate.assert_called_once_with(input=b'pass')
 
         mock_process.assert_called_once_with('updated command', 5, b'out', b'err')
-
-        mock_process_inst.show_output.assert_called_once_with()
 
         self.assertEqual(mock_process_inst, result)

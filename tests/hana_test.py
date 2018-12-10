@@ -24,7 +24,7 @@ try:
 except ImportError:
     import mock
 
-from shaptools import hana
+from shaptools import hana, shell
 
 class TestHana(unittest.TestCase):
     """
@@ -305,54 +305,34 @@ class TestHana(unittest.TestCase):
         self._hana.stop()
         mock_command.assert_called_once_with('HDB stop')
 
+    @mock.patch('shaptools.shell.find_pattern', mock.Mock(return_value=object()))
     def test_get_sr_state_primary(self):
-
-        result_mock = mock.Mock()
-        result_mock.find_pattern.return_value = True
-
-        mock_command = mock.Mock()
-        mock_command.return_value = result_mock
-        self._hana._run_hana_command = mock_command
-
+        self._hana._run_hana_command = mock.Mock(return_value=mock.Mock(output=""))
         state = self._hana.get_sr_state()
-
-        result_mock.find_pattern.assert_called_once_with('.*mode: primary.*')
-        mock_command.assert_called_once_with('hdbnsutil -sr_state')
-
+        shell.find_pattern.assert_called_once_with('.*mode: primary.*', '')
+        self._hana._run_hana_command.assert_called_once_with('hdbnsutil -sr_state')
         self.assertEqual(hana.SrStates.PRIMARY, state)
 
+    @mock.patch('shaptools.shell.find_pattern', mock.Mock(side_effect = [None, object()]))
     def test_get_sr_state_secondary(self):
-        result_mock = mock.Mock()
-        result_mock.find_pattern.side_effect = [False, True]
-
-        mock_command = mock.Mock()
-        mock_command.return_value = result_mock
-        self._hana._run_hana_command = mock_command
-
+        self._hana._run_hana_command = mock.Mock(return_value=mock.Mock(output=""))
         state = self._hana.get_sr_state()
-
-        mock_command.assert_called_once_with('hdbnsutil -sr_state')
-        result_mock.find_pattern.assert_has_calls([
-            mock.call('.*mode: primary.*'),
-            mock.call('.*mode: (sync|syncmem|async)')
+        shell.find_pattern.assert_has_calls([
+            mock.call('.*mode: primary.*', ''),
+            mock.call('.*mode: (sync|syncmem|async)', '')
         ])
+        self._hana._run_hana_command.assert_called_once_with('hdbnsutil -sr_state')
         self.assertEqual(hana.SrStates.SECONDARY, state)
 
+    @mock.patch('shaptools.shell.find_pattern', mock.Mock(return_value=None))
     def test_get_sr_state_disabled(self):
-        result_mock = mock.Mock()
-        result_mock.find_pattern.side_effect = [False, False]
-
-        mock_command = mock.Mock()
-        mock_command.return_value = result_mock
-        self._hana._run_hana_command = mock_command
-
+        self._hana._run_hana_command = mock.Mock(return_value=mock.Mock(output=""))
         state = self._hana.get_sr_state()
-
-        mock_command.assert_called_once_with('hdbnsutil -sr_state')
-        result_mock.find_pattern.assert_has_calls([
-            mock.call('.*mode: primary.*'),
-            mock.call('.*mode: (sync|syncmem|async)')
+        shell.find_pattern.assert_has_calls([
+            mock.call('.*mode: primary.*', ''),
+            mock.call('.*mode: (sync|syncmem|async)', '')
         ])
+        self._hana._run_hana_command.assert_called_once_with('hdbnsutil -sr_state')
         self.assertEqual(hana.SrStates.DISABLED, state)
 
     def test_enable(self):

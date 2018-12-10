@@ -19,9 +19,12 @@ import unittest
 import filecmp
 import shutil
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
-from shaptools import hana
+from shaptools import hana, shell
 
 class TestHana(unittest.TestCase):
     """
@@ -303,53 +306,25 @@ class TestHana(unittest.TestCase):
         mock_command.assert_called_once_with('HDB stop')
 
     def test_get_sr_state_primary(self):
-
-        result_mock = mock.Mock()
-        result_mock.find_pattern.return_value = True
-
         mock_command = mock.Mock()
-        mock_command.return_value = result_mock
-        self._hana._run_hana_command = mock_command
-
+        mock_command.return_value = {"mode": "primary"}
+        self._hana.get_sr_state_details = mock_command
         state = self._hana.get_sr_state()
-
-        result_mock.find_pattern.assert_called_once_with('.*mode: primary.*')
-        mock_command.assert_called_once_with('hdbnsutil -sr_state')
-
         self.assertEqual(hana.SrStates.PRIMARY, state)
 
     def test_get_sr_state_secondary(self):
-        result_mock = mock.Mock()
-        result_mock.find_pattern.side_effect = [False, True]
-
-        mock_command = mock.Mock()
-        mock_command.return_value = result_mock
-        self._hana._run_hana_command = mock_command
-
-        state = self._hana.get_sr_state()
-
-        mock_command.assert_called_once_with('hdbnsutil -sr_state')
-        result_mock.find_pattern.assert_has_calls([
-            mock.call('.*mode: primary.*'),
-            mock.call('.*mode: (sync|syncmem|async)')
-        ])
-        self.assertEqual(hana.SrStates.SECONDARY, state)
+        for mode in self._hana.SYNCMODES:
+            mock_command = mock.Mock()
+            mock_command.return_value = {"mode": mode}
+            self._hana.get_sr_state_details = mock_command
+            state = self._hana.get_sr_state()
+            self.assertEqual(hana.SrStates.SECONDARY, state)
 
     def test_get_sr_state_disabled(self):
-        result_mock = mock.Mock()
-        result_mock.find_pattern.side_effect = [False, False]
-
         mock_command = mock.Mock()
-        mock_command.return_value = result_mock
-        self._hana._run_hana_command = mock_command
-
+        mock_command.return_value = {}
+        self._hana.get_sr_state_details = mock_command
         state = self._hana.get_sr_state()
-
-        mock_command.assert_called_once_with('hdbnsutil -sr_state')
-        result_mock.find_pattern.assert_has_calls([
-            mock.call('.*mode: primary.*'),
-            mock.call('.*mode: (sync|syncmem|async)')
-        ])
         self.assertEqual(hana.SrStates.DISABLED, state)
 
     def test_enable(self):
@@ -450,3 +425,208 @@ class TestHana(unittest.TestCase):
 
         self._hana.sr_cleanup(force=True)
         mock_command.assert_called_once_with('hdbnsutil -sr_cleanup --force')
+
+    def test_get_sr_state_details(self):
+        expected_results = {
+            "Not set (HDB daemon stopped)": { "online": "false", "mode": "none" },
+            "Not set (HDB daemon running)": { "online": "true", "mode": "none" },
+            "Primary (no secondary sync)": {'online': 'true', 'mode': 'primary', 'operation mode': 'primary', 'site id': '1', 'site name': 'NUREMBERG', 'is source system': 'true', 'is secondary/consumer system': 'false', 'has secondaries/consumers attached': 'false', 'is a takeover active': 'false'},
+            "Primary (sync)": {'online': 'true', 'mode': 'primary', 'operation mode': 'primary', 'site id': '1', 'site name': 'NUREMBERG', 'is source system': 'true', 'is secondary/consumer system': 'false', 'has secondaries/consumers attached': 'true', 'is a takeover active': 'false'},
+            "Secondary (sync)": {'online': 'true', 'mode': 'sync', 'operation mode': 'logreplay', 'site id': '2', 'site name': 'PRAGUE', 'is source system': 'false', 'is secondary/consumer system': 'true', 'has secondaries/consumers attached': 'false', 'is a takeover active': 'false', 'active primary site': '1', 'primary masters': 'hana01'},
+            "Primary (kb7023127)": {'online': 'true', 'mode': 'primary', 'site id': '1', 'site name': 'node1'},
+            "Secondary (kb7023127)": {'online': 'true', 'mode': 'sync', 'site id': '2', 'site name': 'node2', 'active primary site': '1'},
+            }
+        for desc, case in _hdbnsutil_sr_state_outputs.items():
+            result = shell.ProcessResult("", 0, case.encode('utf-8'), "".encode('utf-8'))
+            mock_command = mock.Mock()
+            mock_command.return_value = result
+            self._hana._run_hana_command = mock_command
+
+            state = self._hana.get_sr_state_details()
+            mock_command.assert_called_once_with('hdbnsutil -sr_state')
+
+            self.assertEqual(state, expected_results.get(desc, {}))
+
+
+_hdbnsutil_sr_state_outputs = {
+    "Not set (HDB daemon stopped)": """nameserver hana01:30001 not responding.
+
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+online: false
+
+mode: none
+done.
+""",
+    "Not set (HDB daemon running)": """
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+online: true
+
+mode: none
+done.
+""",
+    "Primary (no secondary sync)": """
+
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+online: true
+
+mode: primary
+operation mode: primary
+site id: 1
+site name: NUREMBERG
+
+
+is source system: true
+is secondary/consumer system: false
+has secondaries/consumers attached: false
+is a takeover active: false
+
+Host Mappings:
+~~~~~~~~~~~~~~
+
+
+Site Mappings:
+~~~~~~~~~~~~~~
+NUREMBERG (primary/)
+
+Tier of NUREMBERG: 1
+
+Replication mode of NUREMBERG: primary
+
+Operation mode of NUREMBERG: 
+
+done.
+
+
+""", "Primary (sync)": """
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+online: true
+
+mode: primary
+operation mode: primary
+site id: 1
+site name: NUREMBERG
+
+
+is source system: true
+is secondary/consumer system: false
+has secondaries/consumers attached: true
+is a takeover active: false
+
+Host Mappings:
+~~~~~~~~~~~~~~
+
+hana01 -> [PRAGUE] hana02
+hana01 -> [NUREMBERG] hana01
+
+
+Site Mappings:
+~~~~~~~~~~~~~~
+NUREMBERG (primary/primary)
+    |---PRAGUE (sync/logreplay)
+
+Tier of NUREMBERG: 1
+Tier of PRAGUE: 2
+
+Replication mode of NUREMBERG: primary
+Replication mode of PRAGUE: sync
+
+Operation mode of NUREMBERG: primary
+Operation mode of PRAGUE: logreplay
+
+Mapping: NUREMBERG -> PRAGUE
+done.
+""",
+    "Secondary (sync)": """
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+online: true
+
+mode: sync
+operation mode: logreplay
+site id: 2
+site name: PRAGUE
+
+
+is source system: false
+is secondary/consumer system: true
+has secondaries/consumers attached: false
+is a takeover active: false
+active primary site: 1
+
+primary masters: hana01
+
+Host Mappings:
+~~~~~~~~~~~~~~
+
+hana02 -> [PRAGUE] hana02
+hana02 -> [NUREMBERG] hana01
+
+
+Site Mappings:
+~~~~~~~~~~~~~~
+NUREMBERG (primary/primary)
+    |---PRAGUE (sync/logreplay)
+
+Tier of NUREMBERG: 1
+Tier of PRAGUE: 2
+
+Replication mode of NUREMBERG: primary
+Replication mode of PRAGUE: sync
+
+Operation mode of NUREMBERG: primary
+Operation mode of PRAGUE: logreplay
+
+Mapping: NUREMBERG -> PRAGUE
+done.
+    """,
+    "Primary (kb7023127)": """checking for active or inactive nameserver ...
+
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+online: true
+
+mode: primary
+site id: 1
+site name: node1
+
+Host Mappings:
+~~~~~~~~~~~~~~
+
+sapn1 -> [node1] sapn1
+sapn1 -> [node2] sapn2
+
+
+done.
+    """,
+    "Secondary (kb7023127)": """checking for active or inactive nameserver ...
+
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+online: true
+
+mode: sync
+site id: 2
+site name: node2
+active primary site: 1
+
+
+Host Mappings:
+~~~~~~~~~~~~~~
+
+sapn2 -> [node1] sapn1
+sapn2 -> [node2] sapn2
+
+primary masters:sapn1
+
+done.
+"""
+    }

@@ -77,7 +77,7 @@ class HanaInstance:
         user = self.HANAUSER.format(sid=self.sid)
         result = shell.execute_cmd(cmd, user, self._password)
 
-        if result.returncode:
+        if result.returncode != 0:
             raise HanaError('Error running hana command: {}'.format(result.cmd))
 
         return result
@@ -190,7 +190,7 @@ class HanaInstance:
         """
         cmd = 'HDB version'
         result = self._run_hana_command(cmd)
-        version_pattern = result.find_pattern('\s+version:\s+(\d+.\d+.\d+).*')
+        version_pattern = result.find_pattern(r'\s+version:\s+(\d+.\d+.\d+).*')
         if not version_pattern:
             raise HanaError('Version pattern not found in command output')
         return version_pattern.group(1)
@@ -211,20 +211,44 @@ class HanaInstance:
 
     def get_sr_state(self):
         """
-        Get system replication state in th current node. This command is based
-        in the configuration files, so it returns that, not the actual status.
+        Get system replication state details for the current node.
+
+        Note:
+        The command reads the status from the configuration files
+        and so the reported status may not match the actual status.
 
         Returns:
             SrStates: System replication state
         """
-        cmd = 'hdbnsutil -sr_state'
-        result = self._run_hana_command(cmd)
-
-        if result.find_pattern('.*mode: primary.*'):
+        state = self.get_sr_state_details()
+        mode = state.get("mode", "unknown")
+        if mode == "primary":
             return SrStates.PRIMARY
-        if result.find_pattern('.*mode: ({})'.format('|'.join(self.SYNCMODES))):
+        if mode in self.SYNCMODES:
             return SrStates.SECONDARY
         return SrStates.DISABLED
+
+    def get_sr_state_details(self):
+        """
+        Get system replication state details for the current node.
+
+        Note:
+        The command reads the status from the configuration files
+        and so the reported status may not match the actual status.
+
+        Returns:
+            dict containing details about replication state.
+        """
+        cmd = 'hdbnsutil -sr_state'
+        result = self._run_hana_command(cmd)
+        state = {}
+        for line in result.output.splitlines():
+            if "Site Mappings:" in line or "Host Mappings:" in line:
+                break
+            m = re.match(r'^\s*([^:]+):\s+(.*)$', line.strip())
+            if m is not None:
+                state[m.group(1)] = m.group(2)
+        return state
 
     def sr_enable_primary(self, name):
         """

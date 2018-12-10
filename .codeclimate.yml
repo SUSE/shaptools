@@ -1,0 +1,8 @@
+version: "2"
+checks:
+  method-complexity:
+    config:
+      threshold: 8
+  file-lines:
+    config:
+      threshold: 1024

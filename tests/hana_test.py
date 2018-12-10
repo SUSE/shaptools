@@ -16,10 +16,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import logging
 import unittest
+import filecmp
+import shutil
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
-from shaptools import hana
+from shaptools import hana, shell
 
 class TestHana(unittest.TestCase):
     """
@@ -140,6 +145,111 @@ class TestHana(unittest.TestCase):
         self.assertFalse(result)
         logger.assert_called_once_with(error)
 
+    def test_update_conf_file(self):
+        pwd = os.path.dirname(os.path.abspath(__file__))
+        shutil.copyfile(pwd+'/support/original.conf', '/tmp/copy.conf')
+        conf_file = hana.HanaInstance.update_conf_file(
+            '/tmp/copy.conf', sid='PRD',
+            password='Qwerty1234', system_user_password='Qwerty1234')
+        self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf', conf_file))
+
+        shutil.copyfile(pwd+'/support/original.conf', '/tmp/copy.conf')
+        conf_file = hana.HanaInstance.update_conf_file(
+            '/tmp/copy.conf',
+            **{'sid': 'PRD', 'password': 'Qwerty1234', 'system_user_password': 'Qwerty1234'})
+        self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf', conf_file))
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_create_conf_file(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+        mock_execute.return_value = proc_mock
+
+        conf_file = hana.HanaInstance.create_conf_file(
+            'software_path', 'conf_file.conf', 'root', 'pass')
+
+        mock_execute.assert_called_once_with(
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            '--action=install --dump_configfile_template={conf_file}'.format(
+                conf_file='conf_file.conf'), 'root', 'pass')
+        self.assertEqual('conf_file.conf', conf_file)
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_create_conf_file_error(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 1
+        mock_execute.return_value = proc_mock
+
+        with self.assertRaises(hana.HanaError) as err:
+            hana.HanaInstance.create_conf_file(
+                'software_path', 'conf_file.conf', 'root', 'pass')
+
+        mock_execute.assert_called_once_with(
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            '--action=install --dump_configfile_template={conf_file}'.format(
+                conf_file='conf_file.conf'), 'root', 'pass')
+
+        self.assertTrue(
+            'SAP HANA configuration file creation failed' in str(err.exception))
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_install(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+        mock_execute.return_value = proc_mock
+
+        hana.HanaInstance.install(
+            'software_path', 'conf_file.conf', 'root', 'pass')
+
+        mock_execute.assert_called_once_with(
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            '-b --configfile={conf_file}'.format(
+                conf_file='conf_file.conf'), 'root', 'pass')
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_install_error(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 1
+        mock_execute.return_value = proc_mock
+
+        with self.assertRaises(hana.HanaError) as err:
+            hana.HanaInstance.install(
+                'software_path', 'conf_file.conf', 'root', 'pass')
+
+        mock_execute.assert_called_once_with(
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            '-b --configfile={conf_file}'.format(
+                conf_file='conf_file.conf'), 'root', 'pass')
+
+        self.assertTrue(
+            'SAP HANA installation failed' in str(err.exception))
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_uninstall(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+        mock_execute.return_value = proc_mock
+
+        self._hana.uninstall('root', 'pass')
+
+        mock_execute.assert_called_once_with(
+            '/hana/shared/PRD/hdblcm/hdblcm --uninstall -b', 'root', 'pass')
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_uninstall_error(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 1
+        mock_execute.return_value = proc_mock
+
+        with self.assertRaises(hana.HanaError) as err:
+            self._hana.uninstall('root', 'pass', 'path')
+
+        mock_execute.assert_called_once_with(
+            'path/PRD/hdblcm/hdblcm --uninstall -b', 'root', 'pass')
+
+        self.assertTrue(
+            'SAP HANA uninstallation failed' in str(err.exception))
+
     @mock.patch('shaptools.shell.execute_cmd')
     def test_is_running(self, mock_execute):
         proc_mock = mock.Mock()
@@ -196,53 +306,25 @@ class TestHana(unittest.TestCase):
         mock_command.assert_called_once_with('HDB stop')
 
     def test_get_sr_state_primary(self):
-
-        result_mock = mock.Mock()
-        result_mock.find_pattern.return_value = True
-
         mock_command = mock.Mock()
-        mock_command.return_value = result_mock
-        self._hana._run_hana_command = mock_command
-
+        mock_command.return_value = {"mode": "primary"}
+        self._hana.get_sr_state_details = mock_command
         state = self._hana.get_sr_state()
-
-        result_mock.find_pattern.assert_called_once_with('.*mode: primary.*')
-        mock_command.assert_called_once_with('hdbnsutil -sr_state')
-
         self.assertEqual(hana.SrStates.PRIMARY, state)
 
     def test_get_sr_state_secondary(self):
-        result_mock = mock.Mock()
-        result_mock.find_pattern.side_effect = [False, True]
-
-        mock_command = mock.Mock()
-        mock_command.return_value = result_mock
-        self._hana._run_hana_command = mock_command
-
-        state = self._hana.get_sr_state()
-
-        mock_command.assert_called_once_with('hdbnsutil -sr_state')
-        result_mock.find_pattern.assert_has_calls([
-            mock.call('.*mode: primary.*'),
-            mock.call('.*mode: (sync|syncmem|async)')
-        ])
-        self.assertEqual(hana.SrStates.SECONDARY, state)
+        for mode in self._hana.SYNCMODES:
+            mock_command = mock.Mock()
+            mock_command.return_value = {"mode": mode}
+            self._hana.get_sr_state_details = mock_command
+            state = self._hana.get_sr_state()
+            self.assertEqual(hana.SrStates.SECONDARY, state)
 
     def test_get_sr_state_disabled(self):
-        result_mock = mock.Mock()
-        result_mock.find_pattern.side_effect = [False, False]
-
         mock_command = mock.Mock()
-        mock_command.return_value = result_mock
-        self._hana._run_hana_command = mock_command
-
+        mock_command.return_value = {}
+        self._hana.get_sr_state_details = mock_command
         state = self._hana.get_sr_state()
-
-        mock_command.assert_called_once_with('hdbnsutil -sr_state')
-        result_mock.find_pattern.assert_has_calls([
-            mock.call('.*mode: primary.*'),
-            mock.call('.*mode: (sync|syncmem|async)')
-        ])
         self.assertEqual(hana.SrStates.DISABLED, state)
 
     def test_enable(self):
@@ -343,3 +425,208 @@ class TestHana(unittest.TestCase):
 
         self._hana.sr_cleanup(force=True)
         mock_command.assert_called_once_with('hdbnsutil -sr_cleanup --force')
+
+    def test_get_sr_state_details(self):
+        expected_results = {
+            "Not set (HDB daemon stopped)": { "online": "false", "mode": "none" },
+            "Not set (HDB daemon running)": { "online": "true", "mode": "none" },
+            "Primary (no secondary sync)": {'online': 'true', 'mode': 'primary', 'operation mode': 'primary', 'site id': '1', 'site name': 'NUREMBERG', 'is source system': 'true', 'is secondary/consumer system': 'false', 'has secondaries/consumers attached': 'false', 'is a takeover active': 'false'},
+            "Primary (sync)": {'online': 'true', 'mode': 'primary', 'operation mode': 'primary', 'site id': '1', 'site name': 'NUREMBERG', 'is source system': 'true', 'is secondary/consumer system': 'false', 'has secondaries/consumers attached': 'true', 'is a takeover active': 'false'},
+            "Secondary (sync)": {'online': 'true', 'mode': 'sync', 'operation mode': 'logreplay', 'site id': '2', 'site name': 'PRAGUE', 'is source system': 'false', 'is secondary/consumer system': 'true', 'has secondaries/consumers attached': 'false', 'is a takeover active': 'false', 'active primary site': '1', 'primary masters': 'hana01'},
+            "Primary (kb7023127)": {'online': 'true', 'mode': 'primary', 'site id': '1', 'site name': 'node1'},
+            "Secondary (kb7023127)": {'online': 'true', 'mode': 'sync', 'site id': '2', 'site name': 'node2', 'active primary site': '1'},
+            }
+        for desc, case in _hdbnsutil_sr_state_outputs.items():
+            result = shell.ProcessResult("", 0, case.encode('utf-8'), "".encode('utf-8'))
+            mock_command = mock.Mock()
+            mock_command.return_value = result
+            self._hana._run_hana_command = mock_command
+
+            state = self._hana.get_sr_state_details()
+            mock_command.assert_called_once_with('hdbnsutil -sr_state')
+
+            self.assertEqual(state, expected_results.get(desc, {}))
+
+
+_hdbnsutil_sr_state_outputs = {
+    "Not set (HDB daemon stopped)": """nameserver hana01:30001 not responding.
+
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+online: false
+
+mode: none
+done.
+""",
+    "Not set (HDB daemon running)": """
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+online: true
+
+mode: none
+done.
+""",
+    "Primary (no secondary sync)": """
+
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+online: true
+
+mode: primary
+operation mode: primary
+site id: 1
+site name: NUREMBERG
+
+
+is source system: true
+is secondary/consumer system: false
+has secondaries/consumers attached: false
+is a takeover active: false
+
+Host Mappings:
+~~~~~~~~~~~~~~
+
+
+Site Mappings:
+~~~~~~~~~~~~~~
+NUREMBERG (primary/)
+
+Tier of NUREMBERG: 1
+
+Replication mode of NUREMBERG: primary
+
+Operation mode of NUREMBERG: 
+
+done.
+
+
+""", "Primary (sync)": """
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+online: true
+
+mode: primary
+operation mode: primary
+site id: 1
+site name: NUREMBERG
+
+
+is source system: true
+is secondary/consumer system: false
+has secondaries/consumers attached: true
+is a takeover active: false
+
+Host Mappings:
+~~~~~~~~~~~~~~
+
+hana01 -> [PRAGUE] hana02
+hana01 -> [NUREMBERG] hana01
+
+
+Site Mappings:
+~~~~~~~~~~~~~~
+NUREMBERG (primary/primary)
+    |---PRAGUE (sync/logreplay)
+
+Tier of NUREMBERG: 1
+Tier of PRAGUE: 2
+
+Replication mode of NUREMBERG: primary
+Replication mode of PRAGUE: sync
+
+Operation mode of NUREMBERG: primary
+Operation mode of PRAGUE: logreplay
+
+Mapping: NUREMBERG -> PRAGUE
+done.
+""",
+    "Secondary (sync)": """
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+online: true
+
+mode: sync
+operation mode: logreplay
+site id: 2
+site name: PRAGUE
+
+
+is source system: false
+is secondary/consumer system: true
+has secondaries/consumers attached: false
+is a takeover active: false
+active primary site: 1
+
+primary masters: hana01
+
+Host Mappings:
+~~~~~~~~~~~~~~
+
+hana02 -> [PRAGUE] hana02
+hana02 -> [NUREMBERG] hana01
+
+
+Site Mappings:
+~~~~~~~~~~~~~~
+NUREMBERG (primary/primary)
+    |---PRAGUE (sync/logreplay)
+
+Tier of NUREMBERG: 1
+Tier of PRAGUE: 2
+
+Replication mode of NUREMBERG: primary
+Replication mode of PRAGUE: sync
+
+Operation mode of NUREMBERG: primary
+Operation mode of PRAGUE: logreplay
+
+Mapping: NUREMBERG -> PRAGUE
+done.
+    """,
+    "Primary (kb7023127)": """checking for active or inactive nameserver ...
+
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+online: true
+
+mode: primary
+site id: 1
+site name: node1
+
+Host Mappings:
+~~~~~~~~~~~~~~
+
+sapn1 -> [node1] sapn1
+sapn1 -> [node2] sapn2
+
+
+done.
+    """,
+    "Secondary (kb7023127)": """checking for active or inactive nameserver ...
+
+System Replication State
+~~~~~~~~~~~~~~~~~~~~~~~~
+online: true
+
+mode: sync
+site id: 2
+site name: node2
+active primary site: 1
+
+
+Host Mappings:
+~~~~~~~~~~~~~~
+
+sapn2 -> [node1] sapn1
+sapn2 -> [node2] sapn2
+
+primary masters:sapn1
+
+done.
+"""
+    }

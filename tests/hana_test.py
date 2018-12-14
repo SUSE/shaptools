@@ -455,11 +455,10 @@ class TestHana(unittest.TestCase):
             def __init__(self, rc):
                 self.returncode, self.output = rc, ""
         for rc, expect in ((13, RC.INITIALIZING), (4, RC.UNKNOWN), (15, RC.ACTIVE)):
-            mock_command = mock.Mock()
-            mock_command.return_value = Ret(rc)
-            self._hana._run_hana_command = mock_command
+            self._hana._run_hana_command = mock.Mock(return_value=Ret(rc))
             status = self._hana.get_sr_status()
-            mock_command.assert_called_once_with('HDBSettings.sh systemReplicationStatus.py', exception=False)
+            self._hana._run_hana_command.assert_called_once_with(
+                'HDBSettings.sh systemReplicationStatus.py', exception=False)
             self.assertEqual(status, {"status": expect})
 
 

@@ -37,6 +37,22 @@ class SrStates(enum.Enum):
     SECONDARY = 2
 
 
+class SrStatusReturnCode(enum.Enum):
+    NONE = 10
+    ERROR = 11
+    UNKNOWN = 12
+    INITIALIZING = 13
+    SYNCING = 14
+    ACTIVE = 15
+
+    @classmethod
+    def get(cls, ordinal, default):
+        try:
+            return cls(ordinal)
+        except ValueError:
+            return default
+
+
 class HanaInstance:
     """
     SAP HANA instance implementation
@@ -62,12 +78,13 @@ class HanaInstance:
         self.inst = inst
         self._password = password
 
-    def _run_hana_command(self, cmd):
+    def _run_hana_command(self, cmd, exception=True):
         """
         Run hana command
 
         Args:
             cmd (str): HANA command
+            exception (boolean): Raise HanaError non-zero return code (default true)
 
         Returns:
             ProcessResult: ProcessResult instance storing subprocess returncode,
@@ -77,7 +94,7 @@ class HanaInstance:
         user = self.HANAUSER.format(sid=self.sid)
         result = shell.execute_cmd(cmd, user, self._password)
 
-        if result.returncode != 0:
+        if exception and result.returncode != 0:
             raise HanaError('Error running hana command: {}'.format(result.cmd))
 
         return result
@@ -215,8 +232,8 @@ class HanaInstance:
         Get system replication state for the current node.
 
         Note:
-        The command reads the status from the configuration files
-        and so the reported status may not match the actual status.
+        The command reads the state from the configuration files
+        and so the reported state may not match the actual state.
 
         Returns:
             SrStates: System replication state
@@ -234,10 +251,13 @@ class HanaInstance:
     def get_sr_state_details(self):
         """
         Get system replication state details for the current node.
+        See also get_sr_status which can provide additional details
+        by parsing the output of the SAP python script
+        systemReplicationStatus.py.
 
         Note:
-        The command reads the status from the configuration files
-        and so the reported status may not match the actual status.
+        The command reads the state from the configuration files
+        and so the reported state may not match the actual state.
 
         Returns:
             dict containing details about replication state.
@@ -368,3 +388,44 @@ class HanaInstance:
         """
         cmd = 'hdbnsutil -sr_cleanup{}'.format(' --force' if force else '')
         self._run_hana_command(cmd)
+
+    def _parse_replication_output(self, output):
+        """
+        Utility function to parse output of
+        systemReplicationStatus.py
+        TODO: Parse table data
+        TODO: Parse local state
+        """
+        return {}
+
+    def get_sr_status(self):
+        """
+        Get system replication status (parsed output
+        of systemReplicationStatus.py).
+        """
+        cmd = 'HDBSettings.sh systemReplicationStatus.py'
+        result = self._run_hana_command(cmd, exception=False)
+        status = self._parse_replication_output(result.output)
+        # TODO: Handle HANA bug where non-working SR resulted in RC 15
+        # (see SAPHana RA)
+        status["status"] = SrStatusReturnCode.get(result.returncode, SrStatusReturnCode.UNKNOWN)
+        return status
+
+"""
+# pylint:disable=C0103
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    hana = HanaInstance('prd', '00', 'Qwerty1234')
+    if not hana.is_running():
+        hana.start()
+    state = hana.get_sr_state()
+    if state == SrStates.PRIMARY:
+        hana.sr_disable_primary()
+    elif state == SrStates.SECONDARY:
+        hana.stop()
+        hana.sr_unregister_secondary('NUREMBERG')
+
+    hana.create_backup('backupkey5', 'Qwerty1234', 'SYSTEMDB', 'backup')
+    hana.sr_enable_primary('NUREMBERG')
+    logging.getLogger(__name__).info(hana.get_sr_state())
+"""

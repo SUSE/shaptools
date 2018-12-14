@@ -216,8 +216,8 @@ class HanaInstance:
         Get system replication state for the current node.
 
         Note:
-        The command reads the status from the configuration files
-        and so the reported status may not match the actual status.
+        The command reads the state from the configuration files
+        and so the reported state may not match the actual state.
 
         Returns:
             SrStates: System replication state
@@ -235,10 +235,13 @@ class HanaInstance:
     def get_sr_state_details(self):
         """
         Get system replication state details for the current node.
+        See also get_sr_status which can provide additional details
+        by parsing the output of the SAP python script
+        systemReplicationStatus.py.
 
         Note:
-        The command reads the status from the configuration files
-        and so the reported status may not match the actual status.
+        The command reads the state from the configuration files
+        and so the reported state may not match the actual state.
 
         Returns:
             dict containing details about replication state.
@@ -379,7 +382,7 @@ class HanaInstance:
         """
         return {}
 
-    def get_replication_status(self):
+    def get_sr_status(self):
         """
         Get system replication status (parsed output
         of systemReplicationStatus.py).

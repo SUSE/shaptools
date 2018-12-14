@@ -37,6 +37,22 @@ class SrStates(enum.Enum):
     SECONDARY = 2
 
 
+class SrStatusReturnCode(enum.Enum):
+    NONE = 10
+    ERROR = 11
+    UNKNOWN = 12
+    INITIALIZING = 13
+    SYNCING = 14
+    ACTIVE = 15
+
+    @classmethod
+    def get(cls, ordinal, default):
+        try:
+            return cls(ordinal)
+        except ValueError:
+            return default
+
+
 class HanaInstance:
     """
     SAP HANA instance implementation
@@ -390,17 +406,9 @@ class HanaInstance:
         cmd = 'HDBSettings.sh systemReplicationStatus.py'
         result = self._run_hana_command(cmd, exception=False)
         status = self._parse_replication_output(result.output)
-        rcmap = {
-            10: "No System Replication",
-            11: "Error",
-            12: "Unknown",
-            13: "Initializing",
-            14: "Syncing",
-            15: "Active"
-        }
         # TODO: Handle HANA bug where non-working SR resulted in RC 15
         # (see SAPHana RA)
-        status["status"] = rcmap.get(result.returncode, "Unknown")
+        status["status"] = SrStatusReturnCode.get(result.returncode, SrStatusReturnCode.UNKNOWN)
         return status
 
 """

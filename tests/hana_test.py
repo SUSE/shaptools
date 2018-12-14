@@ -450,17 +450,17 @@ class TestHana(unittest.TestCase):
             self.assertEqual(state, expected_results.get(desc, {}))
 
     def test_get_sr_status(self):
+        from shaptools.hana import SrStatusReturnCode as RC
         class Ret(object):
-            def __init__(self):
-                self.returncode = 13
-                self.output = ""
-        mock_command = mock.Mock()
-        mock_command.return_value = Ret()
-        self._hana._run_hana_command = mock_command
-
-        status = self._hana.get_sr_status()
-        mock_command.assert_called_once_with('HDBSettings.sh systemReplicationStatus.py', exception=False)
-        self.assertEquals(status, {"status": "Initializing"})
+            def __init__(self, rc):
+                self.returncode, self.output = rc, ""
+        for rc, expect in ((13, RC.INITIALIZING), (4, RC.UNKNOWN), (15, RC.ACTIVE)):
+            mock_command = mock.Mock()
+            mock_command.return_value = Ret(rc)
+            self._hana._run_hana_command = mock_command
+            status = self._hana.get_sr_status()
+            mock_command.assert_called_once_with('HDBSettings.sh systemReplicationStatus.py', exception=False)
+            self.assertEqual(status, {"status": expect})
 
 
 _hdbnsutil_sr_state_outputs = {

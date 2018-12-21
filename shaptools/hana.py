@@ -21,6 +21,12 @@ import re
 
 from shaptools import shell
 
+# python2 and python3 compatibility for string usage
+try:
+    basestring
+except NameError:  # pragma: no cover
+    basestring = str
+
 
 class HanaError(Exception):
     """
@@ -69,7 +75,7 @@ class HanaInstance:
     SYNCMODES = ['sync', 'syncmem', 'async']
 
     def __init__(self, sid, inst, password):
-        if not all(isinstance(i, (str, unicode)) for i in [sid, inst, password]):
+        if not all(isinstance(i, basestring) for i in [sid, inst, password]):
             raise TypeError(
                 'provided sid, inst and password parameters must be str type')
 

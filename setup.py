@@ -34,7 +34,7 @@ AUTHOR = "xarbulu"
 AUTHOR_EMAIL = "xarbulu@suse.com"
 URL = ""
 
-LICENSE = read('LICENSE')
+LICENSE = "GPLv3"
 
 CLASSIFIERS = [
 

@@ -1,6 +1,7 @@
 env:
   global:
     - CC_TEST_REPORTER_ID=0af71489e8a341295574cd43eab4bea0d23dd5477618f96cbc9084bf52395b6b
+
 language: python
 matrix:
   include:
@@ -8,7 +9,14 @@ matrix:
       env: TOXENV=py27-codeclimate
     - python: 3.6
       env: TOXENV=py36-codeclimate
+
+before_script:
+    - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+    - chmod +x ./cc-test-reporter
+    - ./cc-test-reporter before-build
 install:
     - pip install tox
 script:
-- tox
+    - tox
+after_script:
+  - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT tests/coverage.xml

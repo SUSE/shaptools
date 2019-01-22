@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/SUSE/shaptools.svg?branch=master)](https://travis-ci.org/SUSE/shaptools)
-[![Coverage Status](https://coveralls.io/repos/github/arbulu89/shaptools/badge.svg?branch=master)](https://coveralls.io/github/arbulu89/shaptools?branch=master)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/1d4f7cd65e061ea100ba/test_coverage)](https://codeclimate.com/github/SUSE/shaptools/test_coverage)
 [![Maintainability](https://api.codeclimate.com/v1/badges/1d4f7cd65e061ea100ba/maintainability)](https://codeclimate.com/github/SUSE/shaptools/maintainability)
 
 # SHAPTOOLS

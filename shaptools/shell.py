@@ -2,7 +2,7 @@
 Module to interact with the shell commands.
 
 :author: xarbulu
-:organization: SUSE Linux GmbH
+:organization: SUSE LLC
 :contact: xarbulu@suse.com
 
 :since: 2018-11-15

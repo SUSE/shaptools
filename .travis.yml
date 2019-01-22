@@ -1,6 +1,4 @@
-env:
-  global:
-    - CC_TEST_REPORTER_ID=0af71489e8a341295574cd43eab4bea0d23dd5477618f96cbc9084bf52395b6b
+# CC_TEST_REPORT_ID must be added to the travis project setting file
 
 language: python
 matrix:
@@ -19,4 +17,5 @@ install:
 script:
     - tox
 after_script:
+  - mv tests/coverage.xml . 
   - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT tests/coverage.xml

@@ -82,7 +82,8 @@ class HanaInstance:
 
         self._logger = logging.getLogger('{}{}'.format(sid, inst))
         self.sid = sid
-        self.inst = inst
+        # Force instance nr always with 2 positions.
+        self.inst = '{:0>2}'.format(inst)
         self._password = password
 
     def _run_hana_command(self, cmd, exception=True):

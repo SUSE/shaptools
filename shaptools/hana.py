@@ -76,6 +76,7 @@ class HanaInstance:
     SYNCMODES = ['sync', 'syncmem', 'async']
 
     def __init__(self, sid, inst, password):
+        inst = '{:0>2}'.format(inst)
         if not all(isinstance(i, basestring) for i in [sid, inst, password]):
             raise TypeError(
                 'provided sid, inst and password parameters must be str type')
@@ -83,7 +84,7 @@ class HanaInstance:
         self._logger = logging.getLogger('{}{}'.format(sid, inst))
         self.sid = sid
         # Force instance nr always with 2 positions.
-        self.inst = '{:0>2}'.format(inst)
+        self.inst = inst
         self._password = password
 
     def _run_hana_command(self, cmd, exception=True):
@@ -311,6 +312,7 @@ class HanaInstance:
             replication_mode (str): Replication mode
             operation_mode (str): Operation mode
         """
+        remote_instance = '{:0>2}'.format(remote_instance)
         cmd = 'hdbnsutil -sr_register --name={} --remoteHost={} '\
               '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
                   name, remote_host, remote_instance, replication_mode, operation_mode)

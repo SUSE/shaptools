@@ -71,7 +71,8 @@ class HanaInstance:
 
     PATH = '/usr/sap/{sid}/HDB{inst}/'
     INSTALL_EXEC = '{software_path}/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm'
-    HANAUSER = '{sid}adm'
+    # SID is usualy written uppercased, but the OS user is always created lower case.
+    HANAUSER = '{sid}adm'.lower()
     SYNCMODES = ['sync', 'syncmem', 'async']
 
     def __init__(self, sid, inst, password):

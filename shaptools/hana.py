@@ -76,6 +76,7 @@ class HanaInstance:
     SYNCMODES = ['sync', 'syncmem', 'async']
 
     def __init__(self, sid, inst, password):
+        # Force instance nr always with 2 positions.
         inst = '{:0>2}'.format(inst)
         if not all(isinstance(i, basestring) for i in [sid, inst, password]):
             raise TypeError(
@@ -83,7 +84,6 @@ class HanaInstance:
 
         self._logger = logging.getLogger('{}{}'.format(sid, inst))
         self.sid = sid
-        # Force instance nr always with 2 positions.
         self.inst = inst
         self._password = password
 

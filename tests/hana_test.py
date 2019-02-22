@@ -57,15 +57,15 @@ class TestHana(unittest.TestCase):
         """
 
     def test_init(self):
+        self._hana = hana.HanaInstance('prd', 1, 'pass')
+        self.assertEqual('01', self._hana.inst)
+
         with self.assertRaises(TypeError) as err:
             self._hana = hana.HanaInstance(1, '00', 'pass')
 
         self.assertTrue(
             'provided sid, inst and password parameters must be str type' in
             str(err.exception))
-
-        with self.assertRaises(TypeError) as err:
-            self._hana = hana.HanaInstance('prd', 0, 'pass')
 
         self.assertTrue(
             'provided sid, inst and password parameters must be str type' in
@@ -345,11 +345,11 @@ class TestHana(unittest.TestCase):
     def test_register(self):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
-        self._hana.sr_register_secondary('test', 'host', '00', 'sync', 'ops')
+        self._hana.sr_register_secondary('test', 'host', 1, 'sync', 'ops')
         mock_command.assert_called_once_with(
             'hdbnsutil -sr_register --name={} --remoteHost={} '\
             '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
-            'test', 'host', '00', 'sync', 'ops'))
+            'test', 'host', '01', 'sync', 'ops'))
 
     def test_unregister(self):
         mock_command = mock.Mock()

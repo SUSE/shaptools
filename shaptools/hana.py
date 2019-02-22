@@ -71,10 +71,13 @@ class HanaInstance:
 
     PATH = '/usr/sap/{sid}/HDB{inst}/'
     INSTALL_EXEC = '{software_path}/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm'
-    HANAUSER = '{sid}adm'
+    # SID is usualy written uppercased, but the OS user is always created lower case.
+    HANAUSER = '{sid}adm'.lower()
     SYNCMODES = ['sync', 'syncmem', 'async']
 
     def __init__(self, sid, inst, password):
+        # Force instance nr always with 2 positions.
+        inst = '{:0>2}'.format(inst)
         if not all(isinstance(i, basestring) for i in [sid, inst, password]):
             raise TypeError(
                 'provided sid, inst and password parameters must be str type')
@@ -309,6 +312,7 @@ class HanaInstance:
             replication_mode (str): Replication mode
             operation_mode (str): Operation mode
         """
+        remote_instance = '{:0>2}'.format(remote_instance)
         cmd = 'hdbnsutil -sr_register --name={} --remoteHost={} '\
               '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
                   name, remote_host, remote_instance, replication_mode, operation_mode)

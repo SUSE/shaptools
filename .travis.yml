@@ -35,7 +35,6 @@ jobs:
       env:
         global:
           - FOLDER=/package
-          - OBS_PROJECT=home:xarbulu:branches:network:ha-clustering:Factory
           - PACKAGE_NAME=python-shaptools
 
       before_install:

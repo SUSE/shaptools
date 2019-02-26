@@ -22,12 +22,12 @@ jobs:
       script:
           - tox
       after_script:
-        - mv tests/coverage.xml .
-        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT tests/coverage.xml
+          - mv tests/coverage.xml .
+          - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT tests/coverage.xml
 
     - stage: test
       python: 3.6
-        env: TOXENV=py36-codeclimate
+      env: TOXENV=py36-codeclimate
       before_script:
           - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
           - chmod +x ./cc-test-reporter
@@ -37,8 +37,8 @@ jobs:
       script:
           - tox
       after_script:
-        - mv tests/coverage.xml .
-        - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT tests/coverage.xml
+          - mv tests/coverage.xml .
+          - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT tests/coverage.xml
 
     - stage: delivery
       env:

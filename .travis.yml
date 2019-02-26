@@ -45,6 +45,7 @@ jobs:
         global:
           - FOLDER=/package
           - PACKAGE_NAME=python-shaptools
+          - TAR_NAME=shaptools
 
       before_install:
         - docker pull xarbulu/continuous_delivery:latest

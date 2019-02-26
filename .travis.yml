@@ -48,7 +48,7 @@ jobs:
           - TAR_NAME=shaptools
 
       before_install:
-        - docker pull xarbulu/continuous_delivery:latest
+        - docker pull shap/continuous_deliver:latest
 
       script:
         - |
@@ -60,5 +60,5 @@ jobs:
           -e PACKAGE_NAME=$PACKAGE_NAME \
           -e TARGET_PROJECT=$TARGET_PROJECT \
           -e TAR_NAME=$TAR_NAME \
-          xarbulu/continuous_delivery \
+          shap/continuous_deliver \
           /bin/bash -c "cd /package;/upload.sh"

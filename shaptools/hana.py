@@ -356,7 +356,7 @@ class HanaInstance:
             return False
 
     def create_user_key(
-            self, key, environment, user, user_password, database=None):
+            self, key, environment, key_user, key_password, database=None):
         """
         Create or update user key entry for the database
         Args:
@@ -369,24 +369,50 @@ class HanaInstance:
         database = '@{}'.format(database) if database else None
         cmd = 'hdbuserstore set {key} {env}{db} {user} {passwd}'.format(
             key=key, env=environment, db=database,
-            user=user, passwd=user_password)
+            user=key_user, passwd=key_password)
         self._run_hana_command(cmd)
 
-    def create_backup(
-            self, user_key, user_password, database, backup_name):
+    def _hdbsql_connect(self, **kwargs):
         """
-        Create the primary node backup
+        Create hdbsql connection string
 
         Args:
-            user_key (str): User key name
-            user_password (str): User key password
+            keystore (str, optional): Keystore to connect to sap hana db
+            user (str, optional): User to connect to sap hana db
+            password (str, optiona): Password to connecto to sap hana db
+        """
+        if kwargs.get('key', None):
+            cmd = 'hdbsql -U {}'.format(kwargs['key'])
+        elif kwargs.get('key_user', None) and kwargs.get('key_password', None):
+            cmd = 'hdbsql -u {} -p {}'.format(
+                kwargs['key_user'], kwargs['key_password'])
+        else:
+            raise ValueError(
+                'key or key_user/key_password parameters must be used')
+        return cmd
+
+    def create_backup(
+            self, database, backup_name,
+            key=None, key_user=None, key_password=None):
+        """
+        Create the primary node backup. Keystore or user/password combination,
+        one of them must be provided
+
+        Args:
             database (str): Database name
-            back_name (str): Backup name
+            backup_name (str): Backup name
+            keystore (str): Keystore
+            user (str): User
+            password (str): User password
         """
         #TODO: Version check
-        cmd = 'hdbsql -U {} -d {} -p {} '\
+
+        hdbsql_cmd = self._hdbsql_connect(
+            key=key, key_user=key_user, key_password=key_password)
+
+        cmd = '{} -d {} '\
               '\\"BACKUP DATA FOR FULL SYSTEM USING FILE (\'{}\')\\"'.format(
-                  user_key, database, user_password, backup_name)
+                  hdbsql_cmd, database, backup_name)
         self._run_hana_command(cmd)
 
     def sr_cleanup(self, force=False):

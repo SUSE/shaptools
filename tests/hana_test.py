@@ -405,44 +405,44 @@ class TestHana(unittest.TestCase):
             user='user', passwd='pass'))
 
     def test_hdbsql_connect_key(self):
-        cmd = self._hana._hdbsql_connect(key='mykey')
+        cmd = self._hana._hdbsql_connect(key_name='mykey')
         self.assertEqual('hdbsql -U mykey', cmd)
 
     def test_hdbsql_connect_key_error(self):
         with self.assertRaises(ValueError) as err:
-            self._hana._hdbsql_connect(key=None)
+            self._hana._hdbsql_connect(key_name=None)
         self.assertTrue(
-            'key or key_user/key_password parameters must be used' in str(
+            'key_name or user_name/user_password parameters must be used' in str(
                 err.exception))
 
     def test_hdbsql_connect_userpass(self):
-        cmd = self._hana._hdbsql_connect(key_user='user', key_password='pass')
+        cmd = self._hana._hdbsql_connect(user_name='user', user_password='pass')
         self.assertEqual('hdbsql -u user -p pass', cmd)
 
     def test_hdbsql_connect_userpass_error(self):
         with self.assertRaises(ValueError) as err:
-            self._hana._hdbsql_connect(key_user=None, key_password=None)
+            self._hana._hdbsql_connect(user_name=None, user_password=None)
         self.assertTrue(
-            'key or key_user/key_password parameters must be used' in str(
+            'key_name or user_name/user_password parameters must be used' in str(
                 err.exception))
 
     def test_hdbsql_connect_error(self):
         with self.assertRaises(ValueError) as err:
             self._hana._hdbsql_connect()
         self.assertTrue(
-            'key or key_user/key_password parameters must be used' in str(
+            'key_name or user_name/user_password parameters must be used' in str(
                 err.exception))
 
         with self.assertRaises(ValueError) as err:
-            self._hana._hdbsql_connect(key_user='user')
+            self._hana._hdbsql_connect(user_name='user')
         self.assertTrue(
-            'key or key_user/key_password parameters must be used' in str(
+            'key_name or user_name/user_password parameters must be used' in str(
                 err.exception))
 
         with self.assertRaises(ValueError) as err:
-            self._hana._hdbsql_connect(key_password='pass')
+            self._hana._hdbsql_connect(user_password='pass')
         self.assertTrue(
-            'key or key_user/key_password parameters must be used' in str(
+            'key_name or user_name/user_password parameters must be used' in str(
                 err.exception))
 
     def test_create_backup(self):
@@ -454,7 +454,7 @@ class TestHana(unittest.TestCase):
         self._hana.create_backup(
             'db', 'backup', 'key', 'key_user', 'key_password')
         mock_hdbsql.assert_called_once_with(
-            key='key', key_user='key_user', key_password='key_password')
+            key_name='key', user_name='key_user', user_password='key_password')
         mock_command.assert_called_once_with(
             '{} -d {} '\
             '\\"BACKUP DATA FOR FULL SYSTEM USING FILE (\'{}\')\\"'.format(

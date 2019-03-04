@@ -1,5 +1,5 @@
 -------------------------------------------------------------------
-Mon Mar 04 15:09:10 UTC 2019 - xarbulu@suse.com
+Mon Mar 4 16:58:10 UTC 2019 - xarbulu@suse.com
 
 - Improved the use of keystore access. When the key_name is informed,
   the user_name/user_password is not needed.

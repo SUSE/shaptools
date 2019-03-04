@@ -404,15 +404,61 @@ class TestHana(unittest.TestCase):
             key='key', env='envi', db='@db',
             user='user', passwd='pass'))
 
+    def test_hdbsql_connect_key(self):
+        cmd = self._hana._hdbsql_connect(key_name='mykey')
+        self.assertEqual('hdbsql -U mykey', cmd)
+
+    def test_hdbsql_connect_key_error(self):
+        with self.assertRaises(ValueError) as err:
+            self._hana._hdbsql_connect(key_name=None)
+        self.assertTrue(
+            'key_name or user_name/user_password parameters must be used' in str(
+                err.exception))
+
+    def test_hdbsql_connect_userpass(self):
+        cmd = self._hana._hdbsql_connect(user_name='user', user_password='pass')
+        self.assertEqual('hdbsql -u user -p pass', cmd)
+
+    def test_hdbsql_connect_userpass_error(self):
+        with self.assertRaises(ValueError) as err:
+            self._hana._hdbsql_connect(user_name=None, user_password=None)
+        self.assertTrue(
+            'key_name or user_name/user_password parameters must be used' in str(
+                err.exception))
+
+    def test_hdbsql_connect_error(self):
+        with self.assertRaises(ValueError) as err:
+            self._hana._hdbsql_connect()
+        self.assertTrue(
+            'key_name or user_name/user_password parameters must be used' in str(
+                err.exception))
+
+        with self.assertRaises(ValueError) as err:
+            self._hana._hdbsql_connect(user_name='user')
+        self.assertTrue(
+            'key_name or user_name/user_password parameters must be used' in str(
+                err.exception))
+
+        with self.assertRaises(ValueError) as err:
+            self._hana._hdbsql_connect(user_password='pass')
+        self.assertTrue(
+            'key_name or user_name/user_password parameters must be used' in str(
+                err.exception))
+
     def test_create_backup(self):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
+        mock_hdbsql = mock.Mock(return_value='hdbsql')
+        self._hana._hdbsql_connect = mock_hdbsql
 
-        self._hana.create_backup('key', 'pass', 'db', 'backup')
+        self._hana.create_backup(
+            'db', 'backup', 'key', 'key_user', 'key_password')
+        mock_hdbsql.assert_called_once_with(
+            key_name='key', user_name='key_user', user_password='key_password')
         mock_command.assert_called_once_with(
-            'hdbsql -U {} -d {} -p {} '\
+            '{} -d {} '\
             '\\"BACKUP DATA FOR FULL SYSTEM USING FILE (\'{}\')\\"'.format(
-            'key', 'db', 'pass', 'backup'))
+            'hdbsql', 'db', 'backup'))
 
     def test_sr_cleanup(self):
         mock_command = mock.Mock()

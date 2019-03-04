@@ -44,10 +44,9 @@ jobs:
     - stage: delivery
       if: type != pull_request
       env:
-        global:
-          - FOLDER=/package
-          - PACKAGE_NAME=python-shaptools
-          - TAR_NAME=shaptools
+        - FOLDER=/package
+        - PACKAGE_NAME=python-shaptools
+        - TAR_NAME=shaptools
 
       before_install:
         - docker pull shap/continuous_deliver:latest
@@ -67,8 +66,7 @@ jobs:
     - stage: submit
       if: type != pull_request AND branch = master
       env:
-        global:
-          - PACKAGE_NAME=python-shaptools
+        - PACKAGE_NAME=python-shaptools
 
       before_install:
         - docker pull shap/continuous_deliver:latest

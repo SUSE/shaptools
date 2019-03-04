@@ -1,4 +1,19 @@
 -------------------------------------------------------------------
+Mon Mar 04 15:09:10 UTC 2019 - xarbulu@suse.com
+
+- Improved the use of keystore access. When the key_name is informed,
+  the user_name/user_password is not needed.
+
+-------------------------------------------------------------------
+Thu Feb 25 10:20:10 UTC 2019 - dakechi@suse.com
+
+- Fix UT to check the inst formatting correctly
+- Move the comment to the right place
+- Enforce the HANA instance nr format.
+- Forces Intance nr always with 2 positions filled with 0
+- Forces right formating on HANA OS admin user.
+
+-------------------------------------------------------------------
 Thu Dec 20 08:33:10 UTC 2018 - xarbulu@suse.com
 
 - First package version 

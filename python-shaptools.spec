@@ -52,7 +52,12 @@ API to expose SAP HANA functionalities
 
 %files %{python_files}
 %doc CHANGELOG.md README.md
+# %license macro is not availabe on older releases
+%if 0%{?sle_version} <= 120300
+%doc LICENSE
+%else
 %license LICENSE
+%endif
 %{python_sitelib}/*
 
 %changelog

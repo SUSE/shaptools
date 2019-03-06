@@ -1,7 +1,7 @@
 #
 # spec file for package python-shaptools
 #
-# Copyright (c) 2018 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2019 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -19,7 +19,7 @@
 Name:           python-shaptools
 Version:        0.1.0
 Release:        0
-License:        GPL-3.0
+License:        GPL-2.0
 Summary:        Python tools to interact with SAP HANA utilities
 Url:            https://github.com/arbulu89/shaptools
 Group:          Development/Languages/Python

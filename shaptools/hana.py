@@ -447,6 +447,147 @@ class HanaInstance:
         status["status"] = SrStatusReturnCode.get(result.returncode, SrStatusReturnCode.UNKNOWN)
         return status
 
+    def set_ini_parameter(
+            self, database, file_name, layer,
+            section_name, parameter_name, parameter_value,
+            layer_name=None, reconfig=False,
+            key_name=None, user_name=None, user_password=None):
+        """
+        set HANA configuration parameters in ini file
+
+        sql syntax:
+        ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
+        SET (<section_name>,<parameter_name>) = <parameter_value> WITH RECONFIGURE
+
+        Args:
+            database (str): Database name
+            file_name (str): ini configuration file name
+            layer (str): target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
+            layer_name (str, optional): target either a tenant name or a target host name
+            section_name (str): section name of parameter in ini file
+            parameter_name (str): name of the parameter to be modified
+            parameter_value (str): the value of the parameter to be set
+            key_name (str): Key name
+            user_name (str): User
+            user_password (str): User password
+        """
+
+        hdbsql_cmd = self._hdbsql_connect(
+            key_name=key_name, user_name=user_name, user_password=user_password)
+
+        if layer in ('HOST', 'DATABASE') and layer_name is not None:
+            layer_name_str = ", \'" + layer_name + "\'"
+        else:
+            layer_name_str = ''
+
+        reconfig_option = ' WITH RECONFIGURE;' if reconfig else ';'
+
+        cmd = '{hdbsql_cmd} -d {db} '\
+              '\"ALTER SYSTEM ALTER CONFIGURATION (\'{file_name}\', \'{layer}\'{layer_name}) SET\
+                  (\'{section_name}\',\'{parameter_name}\') = \
+                      \'{parameter_value}\'{reconfig}\"'.format(
+                          hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
+                          section_name=section_name, parameter_name=parameter_name,
+                          parameter_value=parameter_value, layer_name=layer_name_str,
+                          reconfig=reconfig_option)
+
+        # TODO: return the HANA SQL Statement error if sql fails
+        self._run_hana_command(cmd)
+
+    def unset_ini_parameter(
+            self, database, file_name, layer,
+            section_name, parameter_name, layer_name=None,
+            key_name=None, user_name=None, user_password=None):
+        """
+        unset HANA configuration parameters in ini file
+
+        sql syntax:
+        ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
+        UNSET (<section_name>,<parameter_name>);
+
+        Args:
+            database (str): Database name
+            file_name (str): ini configuration file name
+            layer (str): target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
+            layer_name (str, optional): target either a tenant name or a target host name
+            section_name (str): section name of parameter in ini file
+            parameter_name (str): name of the parameter to be modified
+            database (str): Database name
+            key_name (str): Key name
+            user_name (str): User
+            user_password (str): User password
+        """
+
+        hdbsql_cmd = self._hdbsql_connect(
+            key_name=key_name, user_name=user_name, user_password=user_password)
+
+        if layer in ('HOST', 'DATABASE') and layer_name is not None:
+            layer_name_str = ", \'" + layer_name + "\'"
+        else:
+            layer_name_str = ''
+
+        cmd = '{hdbsql_cmd} -d {db} '\
+              '\"ALTER SYSTEM ALTER CONFIGURATION (\'{file_name}\', \'{layer}\'{layer_name}) UNSET\
+                  (\'{section_name}\',\'{parameter_name}\');\"'.format(
+                      hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
+                      section_name=section_name, parameter_name=parameter_name,
+                      layer_name=layer_name_str)
+
+        self._run_hana_command(cmd)
+
+    def reduce_memory_resources(
+            self, global_allocation_limit_value, preload_column_tables_value=False,
+            key_name=None, user_name=None, user_password=None):
+        """
+        reduce memory resources needed by hana
+
+        sql example:
+        ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') SET
+        ('memorymanager', 'global_allocation_limit') = 'size_in_mb' WITH RECONFIGURE;
+
+        ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') SET
+        ('system_replication', 'preload_column_tables') = 'false' WITH RECONFIGURE;
+
+        Args:
+            database (str): Database name
+            key_name (str): Key name
+            user_name (str): User
+            user_password (str): User password
+        """
+        self.set_ini_parameter(database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',\
+        section_name='memorymanager', parameter_name='global_allocation_limit',\
+        parameter_value=global_allocation_limit_value, reconfig=True,\
+        key_name=key_name, user_name=user_name, user_password=user_password)
+
+        self.set_ini_parameter(database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',\
+        section_name='system_replication', parameter_name='preload_column_tables',\
+        parameter_value=preload_column_tables_value, reconfig=True,\
+        key_name=key_name, user_name=user_name, user_password=user_password)
+
+    def reset_memory_parameters(
+            self, key_name=None, user_name=None, user_password=None):
+        """
+        reset HANA memory resources parameters to default values
+
+        sql example:
+        ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') UNSET
+        ('memorymanager', 'global_allocation_limit')
+
+        ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') UNSET
+        ('system_replication', 'preload_column_tables');
+
+        Args:
+            key_name (str): Key name
+            user_name (str): User
+            user_password (str): User password
+        """
+        self.unset_ini_parameter(database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',\
+        section_name='memorymanager', parameter_name='global_allocation_limit',\
+        key_name=key_name, user_name=user_name, user_password=user_password)
+
+        self.unset_ini_parameter(database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',\
+        section_name='system_replication', parameter_name='preload_column_tables',\
+        key_name=key_name, user_name=user_name, user_password=user_password)
 """
 # pylint:disable=C0103
 if __name__ == '__main__':

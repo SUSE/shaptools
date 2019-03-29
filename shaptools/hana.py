@@ -549,7 +549,8 @@ class HanaInstance:
         ('system_replication', 'preload_column_tables') = 'false' WITH RECONFIGURE;
 
         Args:
-            database (str): Database name
+            global_allocation_limit_value (str): size in Mb for the max memory allocation to HANA
+            preload_column_tables(Boolean): 'preload column tables' to reduce memory footprint
             key_name (str): Key name
             user_name (str): User
             user_password (str): User password
@@ -567,7 +568,9 @@ class HanaInstance:
     def reset_memory_parameters(
             self, key_name=None, user_name=None, user_password=None):
         """
-        reset HANA memory resources parameters to default values
+        reset below 2 HANA memory resources parameters to default values:
+        global_allocation_limit_value: size in Mb for the max memory allocation to HANA
+        preload_column_tables: 'preload column tables' option to reduce memory footprint
 
         sql example:
         ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') UNSET

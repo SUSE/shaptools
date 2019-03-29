@@ -476,7 +476,7 @@ class HanaInstance:
             key_name=key_name, user_name=user_name, user_password=user_password)
 
         if layer in ('HOST', 'DATABASE') and layer_name is not None:
-            layer_name_str = ", \'" + layer_name + "\'"
+            layer_name_str = ', \'{}\''.format(layer_name)
         else:
             layer_name_str = ''
 

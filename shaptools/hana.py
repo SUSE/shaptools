@@ -480,12 +480,12 @@ class HanaInstance:
         else:
             layer_name_str = ''
 
-        reconfig_option = ' WITH RECONFIGURE;' if reconfig else ';'
+        reconfig_option = ' WITH RECONFIGURE' if reconfig else ''
 
         cmd = '{hdbsql_cmd} -d {db} '\
               '\"ALTER SYSTEM ALTER CONFIGURATION (\'{file_name}\', \'{layer}\'{layer_name}) SET\
                   (\'{section_name}\',\'{parameter_name}\') = \
-                      \'{parameter_value}\'{reconfig}\"'.format(
+                      \'{parameter_value}\'{reconfig};\"'.format(
                           hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
                           section_name=section_name, parameter_name=parameter_name,
                           parameter_value=parameter_value, layer_name=layer_name_str,

@@ -555,15 +555,17 @@ class HanaInstance:
             user_name (str): User
             user_password (str): User password
         """
-        self.set_ini_parameter(database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',\
-        section_name='memorymanager', parameter_name='global_allocation_limit',\
-        parameter_value=global_allocation_limit_value, reconfig=True,\
-        key_name=key_name, user_name=user_name, user_password=user_password)
+        self.set_ini_parameter(
+            database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',
+            section_name='memorymanager', parameter_name='global_allocation_limit',
+            parameter_value=global_allocation_limit_value, reconfig=True,
+            key_name=key_name, user_name=user_name, user_password=user_password)
 
-        self.set_ini_parameter(database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',\
-        section_name='system_replication', parameter_name='preload_column_tables',\
-        parameter_value=preload_column_tables_value, reconfig=True,\
-        key_name=key_name, user_name=user_name, user_password=user_password)
+        self.set_ini_parameter(
+            database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',
+            section_name='system_replication', parameter_name='preload_column_tables',
+            parameter_value=preload_column_tables_value, reconfig=True,
+            key_name=key_name, user_name=user_name, user_password=user_password)
 
     def reset_memory_parameters(
             self, key_name=None, user_name=None, user_password=None):
@@ -584,13 +586,15 @@ class HanaInstance:
             user_name (str): User
             user_password (str): User password
         """
-        self.unset_ini_parameter(database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',\
-        section_name='memorymanager', parameter_name='global_allocation_limit',\
-        key_name=key_name, user_name=user_name, user_password=user_password)
+        self.unset_ini_parameter(
+            database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',
+            section_name='memorymanager', parameter_name='global_allocation_limit',
+            key_name=key_name, user_name=user_name, user_password=user_password)
 
-        self.unset_ini_parameter(database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',\
-        section_name='system_replication', parameter_name='preload_column_tables',\
-        key_name=key_name, user_name=user_name, user_password=user_password)
+        self.unset_ini_parameter(
+            database='SYSTEMDB', file_name='global.ini', layer='SYSTEM',
+            section_name='system_replication', parameter_name='preload_column_tables',
+            key_name=key_name, user_name=user_name, user_password=user_password)
 """
 # pylint:disable=C0103
 if __name__ == '__main__':

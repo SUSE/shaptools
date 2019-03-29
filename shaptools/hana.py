@@ -482,14 +482,14 @@ class HanaInstance:
 
         reconfig_option = ' WITH RECONFIGURE' if reconfig else ''
 
-        cmd = '{hdbsql_cmd} -d {db} '\
-              '\"ALTER SYSTEM ALTER CONFIGURATION (\'{file_name}\', \'{layer}\'{layer_name}) SET\
-                  (\'{section_name}\',\'{parameter_name}\') = \
-                      \'{parameter_value}\'{reconfig};\"'.format(
-                          hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
-                          section_name=section_name, parameter_name=parameter_name,
-                          parameter_value=parameter_value, layer_name=layer_name_str,
-                          reconfig=reconfig_option)
+        cmd = ('{hdbsql_cmd} -d {db} '
+               '\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) SET'
+               '(\'{section_name}\',\'{parameter_name}\') = '
+               '{parameter_value}\'{reconfig};\"'.format(
+                   hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
+                   section_name=section_name, parameter_name=parameter_name,
+                   parameter_value=parameter_value, layer_name=layer_name_str,
+                   reconfig=reconfig_option))
 
         # TODO: return the HANA SQL Statement error if sql fails
         self._run_hana_command(cmd)
@@ -526,12 +526,12 @@ class HanaInstance:
         else:
             layer_name_str = ''
 
-        cmd = '{hdbsql_cmd} -d {db} '\
-              '\"ALTER SYSTEM ALTER CONFIGURATION (\'{file_name}\', \'{layer}\'{layer_name}) UNSET\
-                  (\'{section_name}\',\'{parameter_name}\');\"'.format(
-                      hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
-                      section_name=section_name, parameter_name=parameter_name,
-                      layer_name=layer_name_str)
+        cmd = ('{hdbsql_cmd} -d {db} '
+               '\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) UNSET'
+               '(\'{section_name}\',\'{parameter_name}\');\"'.format(
+                   hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
+                   section_name=section_name, parameter_name=parameter_name,
+                   layer_name=layer_name_str))
 
         self._run_hana_command(cmd)
 

@@ -554,12 +554,12 @@ class HanaInstance:
 
         self._run_hana_command(cmd)
 
-    def reduce_memory_resources(
+    def update_memory_resources(
             self, parameter_list,
             database, file_name, layer,
             **kwargs):
         """
-        reduce memory resources needed by hana
+        update memory resources needed by hana
 
         sql example:
         ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') SET

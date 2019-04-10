@@ -451,7 +451,7 @@ class HanaInstance:
             self, parameter_list, database, file_name, layer,
             **kwargs):
         """
-        set HANA configuration parameters in ini file
+        Set HANA configuration parameters in ini file
 
         sql syntax:
         ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
@@ -509,7 +509,7 @@ class HanaInstance:
             database, file_name, layer,
             **kwargs):
         """
-        unset HANA configuration parameters in ini file
+        Unset HANA configuration parameters in ini file
 
         sql syntax:
         ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
@@ -559,7 +559,7 @@ class HanaInstance:
             database, file_name, layer,
             **kwargs):
         """
-        update memory resources needed by hana
+        Update memory resources needed by hana
 
         sql example:
         ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') SET
@@ -600,7 +600,7 @@ class HanaInstance:
             database, file_name, layer,
             **kwargs):
         """
-        reset HANA memory resources parameters to default values:
+        Reset HANA memory resources parameters to default values:
         global_allocation_limit_value: size in Mb for the max memory allocation to HANA
         preload_column_tables: 'preload column tables' option to reduce memory footprint
 

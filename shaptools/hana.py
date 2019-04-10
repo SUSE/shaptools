@@ -379,7 +379,7 @@ class HanaInstance:
         Args:
             key_name (str, optional): Keystore to connect to sap hana db
             user_name (str, optional): User to connect to sap hana db
-            user_password (str, optiona): Password to connecto to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
         """
         if kwargs.get('key_name', None):
             cmd = 'hdbsql -U {}'.format(kwargs['key_name'])
@@ -453,7 +453,7 @@ class HanaInstance:
         """
         Set HANA configuration parameters in ini file
 
-        sql syntax:
+        SQL syntax:
         ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
         SET (<section_name_1>,<parameter_name_1>) = <parameter_value_1>,
             (<section_name_2>,<parameter_name_2>) = <parameter_value_2>
@@ -461,7 +461,7 @@ class HanaInstance:
 
         key_name or user_name/user_password parameters must be used
         Args:
-            parameter_list(dictionary)
+            parameter_list(dict)
                 section_name (str): section name of parameter in ini file
                 parameter_name (str): name of the parameter to be modified
                 parameter_value (str): the value of the parameter to be set
@@ -472,7 +472,7 @@ class HanaInstance:
             reconfig (str, optional): if apply changes to running HANA instance
             key_name (str, optional): Keystore to connect to sap hana db
             user_name (str, optional): User to connect to sap hana db
-            user_password (str, optiona): Password to connecto to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
         """
 
         parameter_list_str = ', '.join(
@@ -511,7 +511,7 @@ class HanaInstance:
         """
         Unset HANA configuration parameters in ini file
 
-        sql syntax:
+        SQL syntax:
         ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
         UNSET (<section_name>,<parameter_name>);
 
@@ -526,7 +526,7 @@ class HanaInstance:
             reconfig (str, optional): if apply changes to running HANA instance
             key_name (str, optional): Keystore to connect to sap hana db
             user_name (str, optional): User to connect to sap hana db
-            user_password (str, optiona): Password to connecto to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
         """
         parameter_list_str = ', '.join(str(params) for params in parameter_list)
 
@@ -561,7 +561,7 @@ class HanaInstance:
         """
         Update memory resources needed by hana
 
-        sql example:
+        SQL example:
         ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') SET
         ('memorymanager', 'global_allocation_limit') = 'size_in_mb' WITH RECONFIGURE;
 
@@ -569,7 +569,7 @@ class HanaInstance:
         ('system_replication', 'preload_column_tables') = 'false' WITH RECONFIGURE;
 
         Args:
-            parameter_list(dictionary)
+            parameter_list(dict)
                 section_name (str): section name of parameter in ini file
                 parameter_name (str): name of the parameter to be modified
                 parameter_value (str): the value of the parameter to be set
@@ -604,7 +604,7 @@ class HanaInstance:
         global_allocation_limit_value: size in Mb for the max memory allocation to HANA
         preload_column_tables: 'preload column tables' option to reduce memory footprint
 
-        sql example:
+        SQL example:
         ALTER SYSTEM ALTER CONFIGURATION ('global.ini', 'SYSTEM') UNSET
         ('memorymanager', 'global_allocation_limit') ,
         ('system_replication', 'preload_column_tables') WITH RECONFIGURE;

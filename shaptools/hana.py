@@ -448,7 +448,7 @@ class HanaInstance:
         return status
 
     def set_ini_parameter(
-            self, parameter_list, database, file_name, layer,
+            self, ini_parameter_values, database, file_name, layer,
             **kwargs):
         """
         Set HANA configuration parameters in ini file
@@ -461,7 +461,8 @@ class HanaInstance:
 
         key_name or user_name/user_password parameters must be used
         Args:
-            parameter_list(dict)
+            ini_parameter_values(dict): Dictionary containing HANA parameters & their values
+            where key = ('section_name', 'parameter_name') and value = 'parameter_value'
                 section_name (str): Section name of parameter in ini file
                 parameter_name (str): Name of the parameter to be modified
                 parameter_value (str): The value of the parameter to be set
@@ -475,9 +476,9 @@ class HanaInstance:
             user_password (str, optional): Password to connect to sap hana db
         """
 
-        parameter_list_str = ', '.join(
+        parameter_str = ', '.join(
             "{!s}={!r}".format(key, val)
-            for (key, val) in parameter_list.items())
+            for (key, val) in ini_parameter_values.items())
 
         key_name = kwargs.get('key_name', None)
         user_name = kwargs.get('user_name', None)
@@ -496,16 +497,16 @@ class HanaInstance:
 
         cmd = ('{hdbsql_cmd} -d {db} '
                '\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) SET'
-               '{parameter_list_str}{reconfig};\"'.format(
+               '{parameter_str}{reconfig};\"'.format(
                    hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
-                   layer_name=layer_name_str, parameter_list_str=parameter_list_str,
+                   layer_name=layer_name_str, parameter_str=parameter_str,
                    reconfig=reconfig_option))
 
         # TODO: return the HANA SQL Statement error if sql fails
         self._run_hana_command(cmd)
 
     def unset_ini_parameter(
-            self, parameter_list,
+            self, ini_parameter_names,
             database, file_name, layer,
             **kwargs):
         """
@@ -516,7 +517,8 @@ class HanaInstance:
         UNSET (<section_name>,<parameter_name>);
 
         Args:
-            parameter_list(list)
+            ini_parameter_names(list): List of HANA parameter names where each entry looks like:
+            (<section_name>,<parameter_name>)
                 section_name (str): Section name of parameter in ini file
                 parameter_name (str): Name of the parameter to be modified
             database (str): Database name
@@ -528,7 +530,7 @@ class HanaInstance:
             user_name (str, optional): User to connect to sap hana db
             user_password (str, optional): Password to connect to sap hana db
         """
-        parameter_list_str = ', '.join(str(params) for params in parameter_list)
+        parameter_str = ', '.join(str(params) for params in ini_parameter_names)
 
         key_name = kwargs.get('key_name', None)
         user_name = kwargs.get('user_name', None)
@@ -547,15 +549,15 @@ class HanaInstance:
 
         cmd = ('{hdbsql_cmd} -d {db} '
                '\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) UNSET'
-               '{parameter_list_str}{reconfig};\"'.format(
+               '{parameter_str}{reconfig};\"'.format(
                    hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
-                   layer_name=layer_name_str, parameter_list_str=parameter_list_str,
+                   layer_name=layer_name_str, parameter_str=parameter_str,
                    reconfig=reconfig_option))
 
         self._run_hana_command(cmd)
 
     def update_memory_resources(
-            self, parameter_list,
+            self, ini_parameter_values,
             database, file_name, layer,
             **kwargs):
         """
@@ -569,7 +571,8 @@ class HanaInstance:
         ('system_replication', 'preload_column_tables') = 'false' WITH RECONFIGURE;
 
         Args:
-            parameter_list(dict)
+            ini_parameter_values(dict): Dictionary containing HANA parameters & their values
+            where key = ('section_name', 'parameter_name') and value = 'parameter_value'
                 section_name (str): Section name of parameter in ini file
                 parameter_name (str): Name of the parameter to be modified
                 parameter_value (str): The value of the parameter to be set
@@ -592,11 +595,11 @@ class HanaInstance:
 
         self.set_ini_parameter(
             database=database, file_name=file_name, layer=layer,
-            layer_name=layer_name, parameter_list=parameter_list, reconfig=reconfig,
+            layer_name=layer_name, ini_parameter_values=ini_parameter_values, reconfig=reconfig,
             key_name=key_name, user_name=user_name, user_password=user_password)
 
     def reset_memory_parameters(
-            self, parameter_list,
+            self, ini_parameter_names,
             database, file_name, layer,
             **kwargs):
         """
@@ -610,7 +613,8 @@ class HanaInstance:
         ('system_replication', 'preload_column_tables') WITH RECONFIGURE;
 
         Args:
-            parameter_list(list)
+            ini_parameter_names(list): List of HANA parameter names where each entry looks like:
+            (<section_name>,<parameter_name>)
                 section_name (str): Section name of parameter in ini file
                 parameter_name (str): Name of the parameter to be modified
             database (str): Database name
@@ -631,7 +635,7 @@ class HanaInstance:
 
         self.unset_ini_parameter(
             database=database, file_name=file_name, layer=layer,
-            layer_name=layer_name, parameter_list=parameter_list, reconfig=reconfig,
+            layer_name=layer_name, ini_parameter_names=ini_parameter_names, reconfig=reconfig,
             key_name=key_name, user_name=user_name, user_password=user_password)
 
 """

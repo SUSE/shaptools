@@ -469,7 +469,7 @@ class HanaInstance:
             file_name (str): ini configuration file name
             layer (str): target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
             layer_name (str, optional): target either a tenant name or a target host name
-            reconfig (str, optional): if apply changes to running HANA instance
+            reconfig (bool, optional): if apply changes to running HANA instance
             key_name (str, optional): Keystore to connect to sap hana db
             user_name (str, optional): User to connect to sap hana db
             user_password (str, optional): Password to connect to sap hana db
@@ -523,7 +523,7 @@ class HanaInstance:
             file_name (str): ini configuration file name
             layer (str): target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
             layer_name (str, optional): target either a tenant name or a target host name
-            reconfig (str, optional): if apply changes to running HANA instance
+            reconfig (bool, optional): if apply changes to running HANA instance
             key_name (str, optional): Keystore to connect to sap hana db
             user_name (str, optional): User to connect to sap hana db
             user_password (str, optional): Password to connect to sap hana db
@@ -577,7 +577,7 @@ class HanaInstance:
             file_name (str): ini configuration file name
             layer (str): target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
             layer_name (str, optional): target either a tenant name or a target host name
-            reconfig (str, optional): if apply changes to running HANA instance
+            reconfig (bool, optional): if apply changes to running HANA instance
             key_name (str, optional): Key name
             user_name (st, optionalr): User
             user_password (str, optional): User password
@@ -617,7 +617,7 @@ class HanaInstance:
             file_name (str): ini configuration file name
             layer (str): target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
             layer_name (str, optional): target either a tenant name or a target host name
-            reconfig (str, optional): if apply changes to running HANA instance
+            reconfig (bool, optional): if apply changes to running HANA instance
             key_name (str, optional): Key name
             user_name (str, optional): User
             user_password (str, optional): User password

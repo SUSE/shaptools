@@ -462,14 +462,14 @@ class HanaInstance:
         key_name or user_name/user_password parameters must be used
         Args:
             parameter_list(dict)
-                section_name (str): section name of parameter in ini file
-                parameter_name (str): name of the parameter to be modified
-                parameter_value (str): the value of the parameter to be set
+                section_name (str): Section name of parameter in ini file
+                parameter_name (str): Name of the parameter to be modified
+                parameter_value (str): The value of the parameter to be set
             database (str): Database name
-            file_name (str): ini configuration file name
-            layer (str): target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
-            layer_name (str, optional): target either a tenant name or a target host name
-            reconfig (bool, optional): if apply changes to running HANA instance
+            file_name (str): INI configuration file name
+            layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
+            layer_name (str, optional): Target either a tenant name or a target host name
+            reconfig (bool, optional): If apply changes to running HANA instance
             key_name (str, optional): Keystore to connect to sap hana db
             user_name (str, optional): User to connect to sap hana db
             user_password (str, optional): Password to connect to sap hana db
@@ -517,13 +517,13 @@ class HanaInstance:
 
         Args:
             parameter_list(list)
-                section_name (str): section name of parameter in ini file
-                parameter_name (str): name of the parameter to be modified
+                section_name (str): Section name of parameter in ini file
+                parameter_name (str): Name of the parameter to be modified
             database (str): Database name
-            file_name (str): ini configuration file name
-            layer (str): target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
-            layer_name (str, optional): target either a tenant name or a target host name
-            reconfig (bool, optional): if apply changes to running HANA instance
+            file_name (str): INI configuration file name
+            layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
+            layer_name (str, optional): Target either a tenant name or a target host name
+            reconfig (bool, optional): If apply changes to running HANA instance
             key_name (str, optional): Keystore to connect to sap hana db
             user_name (str, optional): User to connect to sap hana db
             user_password (str, optional): Password to connect to sap hana db
@@ -570,16 +570,16 @@ class HanaInstance:
 
         Args:
             parameter_list(dict)
-                section_name (str): section name of parameter in ini file
-                parameter_name (str): name of the parameter to be modified
-                parameter_value (str): the value of the parameter to be set
+                section_name (str): Section name of parameter in ini file
+                parameter_name (str): Name of the parameter to be modified
+                parameter_value (str): The value of the parameter to be set
             database (str): Database name
-            file_name (str): ini configuration file name
-            layer (str): target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
-            layer_name (str, optional): target either a tenant name or a target host name
-            reconfig (bool, optional): if apply changes to running HANA instance
-            key_name (str, optional): Key name
-            user_name (st, optionalr): User
+            file_name (str): INI configuration file name
+            layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
+            layer_name (str, optional): Target either a tenant name or a target host name
+            reconfig (bool, optional): If apply changes to running HANA instance
+            key_name (str, optional): Keystore to connect to sap hana db
+            user_name (st, optional): User to connect to sap hana db
             user_password (str, optional): User password
         """
 
@@ -611,15 +611,15 @@ class HanaInstance:
 
         Args:
             parameter_list(list)
-                section_name (str): section name of parameter in ini file
-                parameter_name (str): name of the parameter to be modified
+                section_name (str): Section name of parameter in ini file
+                parameter_name (str): Name of the parameter to be modified
             database (str): Database name
-            file_name (str): ini configuration file name
-            layer (str): target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
-            layer_name (str, optional): target either a tenant name or a target host name
-            reconfig (bool, optional): if apply changes to running HANA instance
-            key_name (str, optional): Key name
-            user_name (str, optional): User
+            file_name (str): INI configuration file name
+            layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
+            layer_name (str, optional): Target either a tenant name or a target host name
+            reconfig (bool, optional): If apply changes to running HANA instance
+            key_name (str, optional): Keystore to connect to sap hana db
+            user_name (str, optional): User to connect to sap hana db
             user_password (str, optional): User password
         """
 

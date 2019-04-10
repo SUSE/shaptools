@@ -538,7 +538,7 @@ class HanaInstance:
 
         layer_name = kwargs.get('layer_name', None)
         if layer in ('HOST', 'DATABASE') and layer_name is not None:
-            layer_name_str = ", \'" + layer_name + "\'"
+            layer_name_str = ', \'{}\''.format(layer_name)
         else:
             layer_name_str = ''
 

@@ -496,8 +496,8 @@ class HanaInstance:
         reconfig_option = ' WITH RECONFIGURE' if reconfig else ''
 
         cmd = ('{hdbsql_cmd} -d {db} '
-               '\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) SET'
-               '{parameter_str}{reconfig};\"'.format(
+               '\\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) SET'
+               '{parameter_str}{reconfig};\\"'.format(
                    hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
                    layer_name=layer_name_str, parameter_str=parameter_str,
                    reconfig=reconfig_option))
@@ -548,8 +548,8 @@ class HanaInstance:
         reconfig_option = ' WITH RECONFIGURE' if reconfig else ''
 
         cmd = ('{hdbsql_cmd} -d {db} '
-               '\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) UNSET'
-               '{parameter_str}{reconfig};\"'.format(
+               '\\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) UNSET'
+               '{parameter_str}{reconfig};\\"'.format(
                    hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
                    layer_name=layer_name_str, parameter_str=parameter_str,
                    reconfig=reconfig_option))

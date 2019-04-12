@@ -449,7 +449,8 @@ class HanaInstance:
 
     def set_ini_parameter(
             self, ini_parameter_values, database, file_name, layer,
-            **kwargs):
+            layer_name=None, reconfig=False,
+            key_name=None, user_name=None, user_password=None):
         """
         Set HANA configuration parameters in ini file
 
@@ -471,28 +472,23 @@ class HanaInstance:
             layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
             layer_name (str, optional): Target either a tenant name or a target host name
             reconfig (bool, optional): If apply changes to running HANA instance
-            key_name (str, optional): Keystore to connect to sap hana db
-            user_name (str, optional): User to connect to sap hana db
-            user_password (str, optional): Password to connect to sap hana db
+            key_name (str): Keystore to connect to sap hana db
+            user_name (str): User to connect to sap hana db
+            user_password (str): Password to connect to sap hana db
         """
 
         parameter_str = ', '.join(
             "{!s}={!r}".format(key, val)
             for (key, val) in ini_parameter_values.items())
 
-        key_name = kwargs.get('key_name', None)
-        user_name = kwargs.get('user_name', None)
-        user_password = kwargs.get('user_password', None)
         hdbsql_cmd = self._hdbsql_connect(
             key_name=key_name, user_name=user_name, user_password=user_password)
 
-        layer_name = kwargs.get('layer_name', None)
         if layer in ('HOST', 'DATABASE') and layer_name is not None:
             layer_name_str = ', \'{}\''.format(layer_name)
         else:
             layer_name_str = ''
 
-        reconfig = kwargs.get('reconfig', False)
         reconfig_option = ' WITH RECONFIGURE' if reconfig else ''
 
         cmd = ('{hdbsql_cmd} -d {db} '
@@ -508,7 +504,8 @@ class HanaInstance:
     def unset_ini_parameter(
             self, ini_parameter_names,
             database, file_name, layer,
-            **kwargs):
+            layer_name=None, reconfig=False,
+            key_name=None, user_name=None, user_password=None):
         """
         Unset HANA configuration parameters in ini file
 
@@ -516,6 +513,7 @@ class HanaInstance:
         ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
         UNSET (<section_name>,<parameter_name>);
 
+        key_name or user_name/user_password parameters must be used
         Args:
             ini_parameter_names(list): List of HANA parameter names where each entry looks like:
             (<section_name>,<parameter_name>)
@@ -526,25 +524,20 @@ class HanaInstance:
             layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
             layer_name (str, optional): Target either a tenant name or a target host name
             reconfig (bool, optional): If apply changes to running HANA instance
-            key_name (str, optional): Keystore to connect to sap hana db
-            user_name (str, optional): User to connect to sap hana db
-            user_password (str, optional): Password to connect to sap hana db
+            key_name (str): Keystore to connect to sap hana db
+            user_name (str): User to connect to sap hana db
+            user_password (str): Password to connect to sap hana db
         """
         parameter_str = ', '.join(str(params) for params in ini_parameter_names)
 
-        key_name = kwargs.get('key_name', None)
-        user_name = kwargs.get('user_name', None)
-        user_password = kwargs.get('user_password', None)
         hdbsql_cmd = self._hdbsql_connect(
             key_name=key_name, user_name=user_name, user_password=user_password)
 
-        layer_name = kwargs.get('layer_name', None)
         if layer in ('HOST', 'DATABASE') and layer_name is not None:
             layer_name_str = ', \'{}\''.format(layer_name)
         else:
             layer_name_str = ''
 
-        reconfig = kwargs.get('reconfig', False)
         reconfig_option = ' WITH RECONFIGURE' if reconfig else ''
 
         cmd = ('{hdbsql_cmd} -d {db} '

@@ -462,8 +462,9 @@ class HanaInstance:
 
         key_name or user_name/user_password parameters must be used
         Args:
-            ini_parameter_values(dict): Dictionary containing HANA parameters & their values
-            where key = ('section_name', 'parameter_name') and value = 'parameter_value'
+            ini_parameter_values(list): list containing HANA parameter details
+            where each entry is a list like below:
+            [section_name, parameter_name,parameter_value]
                 section_name (str): Section name of parameter in ini file
                 parameter_name (str): Name of the parameter to be modified
                 parameter_value (str): The value of the parameter to be set
@@ -472,14 +473,13 @@ class HanaInstance:
             layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
             layer_name (str, optional): Target either a tenant name or a target host name
             reconfig (bool, optional): If apply changes to running HANA instance
-            key_name (str): Keystore to connect to sap hana db
-            user_name (str): User to connect to sap hana db
-            user_password (str): Password to connect to sap hana db
+            key_name (str, optional): Keystore to connect to sap hana db
+            user_name (str, optional): User to connect to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
         """
 
-        parameter_str = ', '.join(
-            "{!s}={!r}".format(key, val)
-            for (key, val) in ini_parameter_values.items())
+        parameter_str = ', '.join("(\'{}\',\'{}\')=\'{}\'".format(
+            params[0], params[1], params[2]) for params in ini_parameter_values)
 
         hdbsql_cmd = self._hdbsql_connect(
             key_name=key_name, user_name=user_name, user_password=user_password)
@@ -513,10 +513,10 @@ class HanaInstance:
         ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
         UNSET (<section_name>,<parameter_name>);
 
-        key_name or user_name/user_password parameters must be used
         Args:
-            ini_parameter_names(list): List of HANA parameter names where each entry looks like:
-            (<section_name>,<parameter_name>)
+            ini_parameter_names(list): list containing HANA parameter details
+            where each entry is a list like below:
+            [section_name,parameter_name]
                 section_name (str): Section name of parameter in ini file
                 parameter_name (str): Name of the parameter to be modified
             database (str): Database name
@@ -524,11 +524,12 @@ class HanaInstance:
             layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
             layer_name (str, optional): Target either a tenant name or a target host name
             reconfig (bool, optional): If apply changes to running HANA instance
-            key_name (str): Keystore to connect to sap hana db
-            user_name (str): User to connect to sap hana db
-            user_password (str): Password to connect to sap hana db
+            key_name (str, optional): Keystore to connect to sap hana db
+            user_name (str, optional): User to connect to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
         """
-        parameter_str = ', '.join(str(params) for params in ini_parameter_names)
+        parameter_str = ', '.join("(\'{}\',\'{}\')".format(
+            params[0], params[1]) for params in ini_parameter_names)
 
         hdbsql_cmd = self._hdbsql_connect(
             key_name=key_name, user_name=user_name, user_password=user_password)

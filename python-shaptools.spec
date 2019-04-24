@@ -31,10 +31,6 @@ BuildRequires:  unzip
 BuildRequires:  fdupes
 BuildArch:      noarch
 
-%ifpython2
-Requires:  python-enum34
-%endif
-
 %python_subpackages
 
 %description

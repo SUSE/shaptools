@@ -34,7 +34,7 @@ AUTHOR = "xarbulu"
 AUTHOR_EMAIL = "xarbulu@suse.com"
 URL = ""
 
-LICENSE = "GPLv3"
+LICENSE = "Apache-2.0"
 
 CLASSIFIERS = [
 

@@ -29,7 +29,7 @@ state = h.get_sr_state()
 
 h.create_user_key(
   'backupkey', 'hana01:30013', 'SYSTEM', 'Qwerty1234', 'SYSTEMDB')
-h.create_backup('backupkey', 'Qwerty1234', 'SYSTEMDB', 'backup')
+h.create_backup('SYSTEMDB', 'backup', 'backupkey', 'SYSTEM', 'Qwerty1234')
 h.sr_enable_primary('NUREMBERG')
 ```
 

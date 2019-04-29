@@ -19,9 +19,9 @@
 Name:           python-shaptools
 Version:        0.1.0
 Release:        0
-License:        GPL-2.0
+License:        Apache-2.0
 Summary:        Python tools to interact with SAP HANA utilities
-Url:            https://github.com/arbulu89/shaptools
+Url:            https://github.com/SUSE/shaptools
 Group:          Development/Languages/Python
 Source:         shaptools-%{version}.tar.gz
 BuildRequires:  python-rpm-macros
@@ -30,10 +30,6 @@ BuildRequires:  %{python_module setuptools}
 BuildRequires:  unzip
 BuildRequires:  fdupes
 BuildArch:      noarch
-
-%ifpython2
-Requires:  python-enum34
-%endif
 
 %python_subpackages
 

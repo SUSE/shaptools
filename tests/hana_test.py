@@ -310,7 +310,7 @@ class TestHana(unittest.TestCase):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
         state = self._hana.get_sr_state()
-        self.assertEqual(hana.SrStates.PRIMARY, state)
+        self.assertEqual('PRIMARY', state)
         mock_command.assert_called_once_with('hdbnsutil -sr_state')
 
     @mock.patch('shaptools.shell.find_pattern', mock.Mock(side_effect = [None, object()]))
@@ -318,7 +318,7 @@ class TestHana(unittest.TestCase):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
         state = self._hana.get_sr_state()
-        self.assertEqual(hana.SrStates.SECONDARY, state)
+        self.assertEqual('SECONDARY', state)
         mock_command.assert_called_once_with('hdbnsutil -sr_state')
 
     @mock.patch('shaptools.shell.find_pattern', mock.Mock(return_value=None))
@@ -326,7 +326,7 @@ class TestHana(unittest.TestCase):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
         state = self._hana.get_sr_state()
-        self.assertEqual(hana.SrStates.DISABLED, state)
+        self.assertEqual('DISABLED', state)
         mock_command.assert_called_once_with('hdbnsutil -sr_state')
 
     def test_enable(self):
@@ -496,11 +496,10 @@ class TestHana(unittest.TestCase):
             self.assertEqual(state, expected_results.get(desc, {}))
 
     def test_get_sr_status(self):
-        from shaptools.hana import SrStatusReturnCode as RC
         class Ret(object):
             def __init__(self, rc):
                 self.returncode, self.output = rc, ""
-        for rc, expect in ((13, RC.INITIALIZING), (4, RC.UNKNOWN), (15, RC.ACTIVE)):
+        for rc, expect in ((13, 'INITIALIZING'), (4, 'UNKNOWN'), (15, 'ACTIVE')):
             self._hana._run_hana_command = mock.Mock(return_value=Ret(rc))
             status = self._hana.get_sr_status()
             self._hana._run_hana_command.assert_called_once_with(

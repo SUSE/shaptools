@@ -15,7 +15,6 @@ SAP HANA management module
 from __future__ import print_function
 
 import logging
-import enum
 import fileinput
 import re
 
@@ -34,29 +33,25 @@ class HanaError(Exception):
     """
 
 
-class SrStates(enum.Enum):
-    """
-    System replication states
-    """
-    DISABLED = 0
-    PRIMARY = 1
-    SECONDARY = 2
+# System replication states
+# Random value used
+SR_STATES = {
+    0: 'DISABLED',
+    1: 'PRIMARY',
+    2: 'SECONDARY'
+}
 
 
-class SrStatusReturnCode(enum.Enum):
-    NONE = 10
-    ERROR = 11
-    UNKNOWN = 12
-    INITIALIZING = 13
-    SYNCING = 14
-    ACTIVE = 15
-
-    @classmethod
-    def get(cls, ordinal, default):
-        try:
-            return cls(ordinal)
-        except ValueError:
-            return default
+# System replication statuses.
+# Value get from HDBSettings.sh systemReplicationStatus.py return code
+SR_STATUS = {
+    10: 'NONE',
+    11: 'ERROR',
+    12: 'UNKNOWN',
+    13: 'INITIALIZING',
+    14: 'SYNCING',
+    15: 'ACTIVE'
+}
 
 
 class HanaInstance:
@@ -245,17 +240,20 @@ class HanaInstance:
         and so the reported state may not match the actual state.
 
         Returns:
-            SrStates: System replication state
+            str: String between PRIMARY, SECONDARY and DISABLED
+
+        INFO: In previous versions this was done using an enum. enum usage
+        was removed to avoid dependencies
         """
         cmd = 'hdbnsutil -sr_state'
         result = self._run_hana_command(cmd)
 
         if shell.find_pattern('.*mode: primary.*', result.output) is not None:
-            return SrStates.PRIMARY
+            return 'PRIMARY'
         if shell.find_pattern('.*mode: ({})'.format('|'.join(self.SYNCMODES)),
                               result.output) is not None:
-            return SrStates.SECONDARY
-        return SrStates.DISABLED
+            return 'SECONDARY'
+        return 'DISABLED'
 
     def get_sr_state_details(self):
         """
@@ -438,13 +436,17 @@ class HanaInstance:
         """
         Get system replication status (parsed output
         of systemReplicationStatus.py).
+
+        Returns:
+            str: Strings from SR_STATUS dictionary (UNKNOWN if the return code
+            is not defined)
         """
         cmd = 'HDBSettings.sh systemReplicationStatus.py'
         result = self._run_hana_command(cmd, exception=False)
         status = self._parse_replication_output(result.output)
         # TODO: Handle HANA bug where non-working SR resulted in RC 15
         # (see SAPHana RA)
-        status["status"] = SrStatusReturnCode.get(result.returncode, SrStatusReturnCode.UNKNOWN)
+        status["status"] = SR_STATUS.get(result.returncode, SR_STATUS[12])
         return status
 
     def set_ini_parameter(
@@ -549,22 +551,3 @@ class HanaInstance:
                    reconfig=reconfig_option))
 
         self._run_hana_command(cmd)
-
-"""
-# pylint:disable=C0103
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    hana = HanaInstance('prd', '00', 'Qwerty1234')
-    if not hana.is_running():
-        hana.start()
-    state = hana.get_sr_state()
-    if state == SrStates.PRIMARY:
-        hana.sr_disable_primary()
-    elif state == SrStates.SECONDARY:
-        hana.stop()
-        hana.sr_unregister_secondary('NUREMBERG')
-
-    hana.create_backup('backupkey5', 'Qwerty1234', 'SYSTEMDB', 'backup')
-    hana.sr_enable_primary('NUREMBERG')
-    logging.getLogger(__name__).info(hana.get_sr_state())
-"""

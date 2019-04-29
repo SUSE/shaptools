@@ -16,11 +16,11 @@ from shaptools import hana
 h = hana.HanaInstance('prd', '00', 'Qwerty1234')
 
 if not h.is_installed():
-  conf_file = hana.HanaInstance(.create_conf_file(
+  conf_file = hana.HanaInstance.create_conf_file(
     '/sap_inst/51052481', '/home/myuser/hana.conf', 'root', 'root')
-  hana.HanaInstance(.update_conf_file(
+  hana.HanaInstance.update_conf_file(
     conf_file, sid='PRD', password='Qwerty1234', system_user_password='Qwerty1234')
-  hana.HanaInstance(.install('/sap_inst/51052481', conf_file, 'root', 'root')
+  hana.HanaInstance.install('/sap_inst/51052481', conf_file, 'root', 'root')
 
 if not h.is_running():
     h.start()
@@ -29,7 +29,7 @@ state = h.get_sr_state()
 
 h.create_user_key(
   'backupkey', 'hana01:30013', 'SYSTEM', 'Qwerty1234', 'SYSTEMDB')
-h.create_backup('backupkey', 'Qwerty1234', 'SYSTEMDB', 'backup')
+h.create_backup('SYSTEMDB', 'backup', 'backupkey', 'SYSTEM', 'Qwerty1234')
 h.sr_enable_primary('NUREMBERG')
 ```
 

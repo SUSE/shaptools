@@ -406,7 +406,8 @@ class TestHana(unittest.TestCase):
 
     def test_hdbsql_connect_key(self):
         cmd = self._hana._hdbsql_connect(key_name='mykey')
-        self.assertEqual('hdbsql -U mykey', cmd)
+        expected_cmd = 'hdbsql -i {} -U mykey'.format(self._hana.inst)
+        self.assertEqual(expected_cmd, cmd)
 
     def test_hdbsql_connect_key_error(self):
         with self.assertRaises(ValueError) as err:
@@ -417,7 +418,8 @@ class TestHana(unittest.TestCase):
 
     def test_hdbsql_connect_userpass(self):
         cmd = self._hana._hdbsql_connect(user_name='user', user_password='pass')
-        self.assertEqual('hdbsql -u user -p pass', cmd)
+        expected_cmd = 'hdbsql -i {} -u user -p pass'.format(self._hana.inst)
+        self.assertEqual(expected_cmd, cmd)
 
     def test_hdbsql_connect_userpass_error(self):
         with self.assertRaises(ValueError) as err:

@@ -380,9 +380,10 @@ class HanaInstance:
             user_password (str, optional): Password to connect to sap hana db
         """
         if kwargs.get('key_name', None):
-            cmd = 'hdbsql -U {}'.format(kwargs['key_name'])
+            cmd = 'hdbsql -i {} -U {}'.format(self.inst, kwargs['key_name'])
         elif kwargs.get('user_name', None) and kwargs.get('user_password', None):
-            cmd = 'hdbsql -u {} -p {}'.format(
+            cmd = 'hdbsql -i {} -u {} -p {}'.format(
+                self.inst,
                 kwargs['user_name'], kwargs['user_password'])
         else:
             raise ValueError(

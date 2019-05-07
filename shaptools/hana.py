@@ -466,8 +466,8 @@ class HanaInstance:
         key_name or user_name/user_password parameters must be used
         Args:
             ini_parameter_values(list): list containing HANA parameter details
-            where each entry is a list like below:
-            [section_name, parameter_name,parameter_value]
+            where each entry is a dictionary like below:
+            {'section_name':'name', 'parameter_name':'param_name', 'parameter_value':'value'}
                 section_name (str): Section name of parameter in ini file
                 parameter_name (str): Name of the parameter to be modified
                 parameter_value (str): The value of the parameter to be set
@@ -482,7 +482,8 @@ class HanaInstance:
         """
 
         parameter_str = ', '.join("(\'{}\',\'{}\')=\'{}\'".format(
-            params[0], params[1], params[2]) for params in ini_parameter_values)
+            params['section_name'], params['parameter_name'],
+            params['parameter_value'])for params in ini_parameter_values)
 
         hdbsql_cmd = self._hdbsql_connect(
             key_name=key_name, user_name=user_name, user_password=user_password)
@@ -518,8 +519,8 @@ class HanaInstance:
 
         Args:
             ini_parameter_names(list): list containing HANA parameter details
-            where each entry is a list like below:
-            [section_name,parameter_name]
+            where each entry is a dictionary like below:
+            {'section_name':'name', 'parameter_name':'param_name'}
                 section_name (str): Section name of parameter in ini file
                 parameter_name (str): Name of the parameter to be modified
             database (str): Database name
@@ -532,7 +533,7 @@ class HanaInstance:
             user_password (str, optional): Password to connect to sap hana db
         """
         parameter_str = ', '.join("(\'{}\',\'{}\')".format(
-            params[0], params[1]) for params in ini_parameter_names)
+            params['section_name'], params['parameter_name']) for params in ini_parameter_names)
 
         hdbsql_cmd = self._hdbsql_connect(
             key_name=key_name, user_name=user_name, user_password=user_password)

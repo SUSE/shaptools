@@ -515,7 +515,8 @@ class TestHana(unittest.TestCase):
         self._hana._hdbsql_connect = mock_hdbsql
 
         self._hana.set_ini_parameter(
-            ini_parameter_values=[["memorymanager","global_allocation_limit","25000"]],
+            ini_parameter_values=[{'section_name':'memorymanager',
+            'parameter_name':'global_allocation_limit', 'parameter_value':'25000'}],
             database='db', file_name='global.ini', layer='SYSTEM',
             key_name='key', user_name='key_user', user_password='key_password')
         mock_hdbsql.assert_called_once_with(
@@ -534,7 +535,8 @@ class TestHana(unittest.TestCase):
         self._hana._hdbsql_connect = mock_hdbsql
 
         self._hana.set_ini_parameter(
-            ini_parameter_values=[["memorymanager","global_allocation_limit","25000"]],
+            ini_parameter_values=[{'section_name':'memorymanager',
+            'parameter_name':'global_allocation_limit', 'parameter_value':'25000'}],
             database='db', file_name='global.ini',
             layer='HOST', layer_name='host01',
             key_name='key', user_name='key_user', user_password='key_password')
@@ -555,7 +557,8 @@ class TestHana(unittest.TestCase):
         self._hana._hdbsql_connect = mock_hdbsql
 
         self._hana.set_ini_parameter(
-            ini_parameter_values=[["memorymanager","global_allocation_limit","25000"]],
+            ini_parameter_values=[{'section_name':'memorymanager',
+            'parameter_name':'global_allocation_limit', 'parameter_value':'25000'}],
             database='db', file_name='global.ini', layer='SYSTEM',
             reconfig=True, key_name='key', user_name='key_user', user_password='key_password')
         mock_hdbsql.assert_called_once_with(
@@ -575,8 +578,9 @@ class TestHana(unittest.TestCase):
         self._hana._hdbsql_connect = mock_hdbsql
 
         self._hana.unset_ini_parameter(
-            ini_parameter_names=[["memorymanager","global_allocation_limit"]], database='db',
-            file_name='global.ini', layer='SYSTEM',
+            ini_parameter_names=[{'section_name':'memorymanager',
+            'parameter_name':'global_allocation_limit'}],
+            database='db', file_name='global.ini', layer='SYSTEM',
             key_name='key', user_name='key_user', user_password='key_password')
         mock_hdbsql.assert_called_once_with(
             key_name='key', user_name='key_user', user_password='key_password')
@@ -594,8 +598,9 @@ class TestHana(unittest.TestCase):
         self._hana._hdbsql_connect = mock_hdbsql
 
         self._hana.unset_ini_parameter(
-            ini_parameter_names=[["memorymanager","global_allocation_limit"]], database='db',
-            file_name='global.ini', layer='HOST', layer_name='host01',
+            ini_parameter_names=[{'section_name':'memorymanager',
+            'parameter_name':'global_allocation_limit'}],
+            database='db', file_name='global.ini', layer='HOST', layer_name='host01',
             key_name='key', user_name='key_user', user_password='key_password')
         mock_hdbsql.assert_called_once_with(
             key_name='key', user_name='key_user', user_password='key_password')
@@ -613,8 +618,9 @@ class TestHana(unittest.TestCase):
         self._hana._hdbsql_connect = mock_hdbsql
 
         self._hana.unset_ini_parameter(
-            ini_parameter_names=[["memorymanager","global_allocation_limit"]], database='db',
-            file_name='global.ini', layer='SYSTEM', reconfig=True,
+            ini_parameter_names=[{'section_name':'memorymanager',
+            'parameter_name':'global_allocation_limit'}],
+            database='db', file_name='global.ini', layer='SYSTEM', reconfig=True,
             key_name='key', user_name='key_user', user_password='key_password')
         mock_hdbsql.assert_called_once_with(
             key_name='key', user_name='key_user', user_password='key_password')

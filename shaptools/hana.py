@@ -451,14 +451,13 @@ class HanaInstance:
 
     def _manage_ini_file(
             self, parameter_str, database, file_name, layer,
-            layer_name=None, reconfig=False, set_value=True,
-            key_name=None, user_name=None, user_password=None):
+            **kwargs):
         """
         Construct command with HANA SQL to update configuration parameters in ini file
 
         key_name or user_name/user_password parameters must be used
         Args:
-            parameter_str(str): String containing HANA parameter details to be updated
+            parameter_str(list): list containing HANA parameter details in a dict format
             database (str): Database name
             file_name (str): INI configuration file name
             layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
@@ -469,6 +468,13 @@ class HanaInstance:
             user_name (str, optional): User to connect to sap hana db
             user_password (str, optional): Password to connect to sap hana db
         """
+        layer_name = kwargs.get('layer_name', None)
+        reconfig = kwargs.get('reconfig', False)
+        set_value = kwargs.get('set_value', True)
+        key_name = kwargs.get('key_name', None)
+        user_name = kwargs.get('user_name', None)
+        user_password = kwargs.get('user_password', None)
+
         hdbsql_cmd = self._hdbsql_connect(
             key_name=key_name, user_name=user_name, user_password=user_password)
 
@@ -492,8 +498,7 @@ class HanaInstance:
 
     def set_ini_parameter(
             self, ini_parameter_values, database, file_name, layer,
-            layer_name=None, reconfig=False,
-            key_name=None, user_name=None, user_password=None):
+            **kwargs):
         """
         Set HANA configuration parameters in ini file
 
@@ -525,15 +530,20 @@ class HanaInstance:
             params['section_name'], params['parameter_name'],
             params['parameter_value'])for params in ini_parameter_values)
 
-        self._manage_ini_file(parameter_str=parameter_str, database=database,
-                              file_name=file_name, layer=layer, layer_name=layer_name,
+        layer_name = kwargs.get('layer_name', None)
+        reconfig = kwargs.get('reconfig', False)
+        key_name = kwargs.get('key_name', None)
+        user_name = kwargs.get('user_name', None)
+        user_password = kwargs.get('user_password', None)
+
+        self._manage_ini_file(parameter_str=parameter_str, database=database, file_name=file_name,
+                              layer=layer, layer_name=layer_name,
                               set_value=True, reconfig=reconfig,
                               key_name=key_name, user_name=user_name, user_password=user_password)
 
     def unset_ini_parameter(
             self, ini_parameter_names, database, file_name, layer,
-            layer_name=None, reconfig=False,
-            key_name=None, user_name=None, user_password=None):
+            **kwargs):
         """
         Unset HANA configuration parameters in ini file
 
@@ -560,7 +570,13 @@ class HanaInstance:
         parameter_str = ', '.join("(\'{}\',\'{}\')".format(
             params['section_name'], params['parameter_name']) for params in ini_parameter_names)
 
-        self._manage_ini_file(parameter_str=parameter_str, database=database,
-                              file_name=file_name, layer=layer, layer_name=layer_name,
+        layer_name = kwargs.get('layer_name', None)
+        reconfig = kwargs.get('reconfig', False)
+        key_name = kwargs.get('key_name', None)
+        user_name = kwargs.get('user_name', None)
+        user_password = kwargs.get('user_password', None)
+
+        self._manage_ini_file(parameter_str=parameter_str, database=database, file_name=file_name,
+                              layer=layer, layer_name=layer_name,
                               set_value=False, reconfig=reconfig,
                               key_name=key_name, user_name=user_name, user_password=user_password)

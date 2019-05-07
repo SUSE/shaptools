@@ -449,6 +449,47 @@ class HanaInstance:
         status["status"] = SR_STATUS.get(result.returncode, SR_STATUS[12])
         return status
 
+    def _manage_ini_file(
+            self, parameter_str, database, file_name, layer,
+            layer_name=None, reconfig=False, set_value=True,
+            key_name=None, user_name=None, user_password=None):
+        """
+        Construct command with HANA SQL to update configuration parameters in ini file
+
+        key_name or user_name/user_password parameters must be used
+        Args:
+            parameter_str(str): String containing HANA parameter details to be updated
+            database (str): Database name
+            file_name (str): INI configuration file name
+            layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
+            layer_name (str, optional): Target either a tenant name or a target host name
+            reconfig (bool, optional): If apply changes to running HANA instance
+            set_value(bool, optional): Choose SET or UNSET operation to update parameters
+            key_name (str, optional): Keystore to connect to sap hana db
+            user_name (str, optional): User to connect to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
+        """
+        hdbsql_cmd = self._hdbsql_connect(
+            key_name=key_name, user_name=user_name, user_password=user_password)
+
+        if layer in ('HOST', 'DATABASE') and layer_name is not None:
+            layer_name_str = ', \'{}\''.format(layer_name)
+        else:
+            layer_name_str = ''
+
+        set_str = 'SET' if set_value else 'UNSET'
+        reconfig_option = ' WITH RECONFIGURE' if reconfig else ''
+
+        cmd = ('{hdbsql_cmd} -d {db} '
+               '\\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) '
+               '{set_str}{parameter_str}{reconfig};\\"'.format(
+                   hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
+                   layer_name=layer_name_str, set_str=set_str, parameter_str=parameter_str,
+                   reconfig=reconfig_option))
+
+        # TODO: return the HANA SQL Statement error if sql fails
+        self._run_hana_command(cmd)
+
     def set_ini_parameter(
             self, ini_parameter_values, database, file_name, layer,
             layer_name=None, reconfig=False,
@@ -484,29 +525,13 @@ class HanaInstance:
             params['section_name'], params['parameter_name'],
             params['parameter_value'])for params in ini_parameter_values)
 
-        hdbsql_cmd = self._hdbsql_connect(
-            key_name=key_name, user_name=user_name, user_password=user_password)
-
-        if layer in ('HOST', 'DATABASE') and layer_name is not None:
-            layer_name_str = ', \'{}\''.format(layer_name)
-        else:
-            layer_name_str = ''
-
-        reconfig_option = ' WITH RECONFIGURE' if reconfig else ''
-
-        cmd = ('{hdbsql_cmd} -d {db} '
-               '\\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) SET'
-               '{parameter_str}{reconfig};\\"'.format(
-                   hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
-                   layer_name=layer_name_str, parameter_str=parameter_str,
-                   reconfig=reconfig_option))
-
-        # TODO: return the HANA SQL Statement error if sql fails
-        self._run_hana_command(cmd)
+        self._manage_ini_file(parameter_str=parameter_str, database=database,
+                              file_name=file_name, layer=layer, layer_name=layer_name,
+                              set_value=True, reconfig=reconfig,
+                              key_name=key_name, user_name=user_name, user_password=user_password)
 
     def unset_ini_parameter(
-            self, ini_parameter_names,
-            database, file_name, layer,
+            self, ini_parameter_names, database, file_name, layer,
             layer_name=None, reconfig=False,
             key_name=None, user_name=None, user_password=None):
         """
@@ -516,6 +541,7 @@ class HanaInstance:
         ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
         UNSET (<section_name>,<parameter_name>);
 
+        key_name or user_name/user_password parameters must be used
         Args:
             ini_parameter_names(list): list containing HANA parameter details
             where each entry is a dictionary like below:
@@ -534,21 +560,7 @@ class HanaInstance:
         parameter_str = ', '.join("(\'{}\',\'{}\')".format(
             params['section_name'], params['parameter_name']) for params in ini_parameter_names)
 
-        hdbsql_cmd = self._hdbsql_connect(
-            key_name=key_name, user_name=user_name, user_password=user_password)
-
-        if layer in ('HOST', 'DATABASE') and layer_name is not None:
-            layer_name_str = ', \'{}\''.format(layer_name)
-        else:
-            layer_name_str = ''
-
-        reconfig_option = ' WITH RECONFIGURE' if reconfig else ''
-
-        cmd = ('{hdbsql_cmd} -d {db} '
-               '\\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) UNSET'
-               '{parameter_str}{reconfig};\\"'.format(
-                   hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
-                   layer_name=layer_name_str, parameter_str=parameter_str,
-                   reconfig=reconfig_option))
-
-        self._run_hana_command(cmd)
+        self._manage_ini_file(parameter_str=parameter_str, database=database,
+                              file_name=file_name, layer=layer, layer_name=layer_name,
+                              set_value=False, reconfig=reconfig,
+                              key_name=key_name, user_name=user_name, user_password=user_password)

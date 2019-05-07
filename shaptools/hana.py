@@ -383,8 +383,7 @@ class HanaInstance:
             cmd = 'hdbsql -i {} -U {}'.format(self.inst, kwargs['key_name'])
         elif kwargs.get('user_name', None) and kwargs.get('user_password', None):
             cmd = 'hdbsql -i {} -u {} -p {}'.format(
-                self.inst,
-                kwargs['user_name'], kwargs['user_password'])
+                self.inst, kwargs['user_name'], kwargs['user_password'])
         else:
             raise ValueError(
                 'key_name or user_name/user_password parameters must be used')

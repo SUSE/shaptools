@@ -377,13 +377,13 @@ class HanaInstance:
         Args:
             key_name (str, optional): Keystore to connect to sap hana db
             user_name (str, optional): User to connect to sap hana db
-            user_password (str, optiona): Password to connecto to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
         """
         if kwargs.get('key_name', None):
-            cmd = 'hdbsql -U {}'.format(kwargs['key_name'])
+            cmd = 'hdbsql -i {} -U {}'.format(self.inst, kwargs['key_name'])
         elif kwargs.get('user_name', None) and kwargs.get('user_password', None):
-            cmd = 'hdbsql -u {} -p {}'.format(
-                kwargs['user_name'], kwargs['user_password'])
+            cmd = 'hdbsql -i {} -u {} -p {}'.format(
+                self.inst, kwargs['user_name'], kwargs['user_password'])
         else:
             raise ValueError(
                 'key_name or user_name/user_password parameters must be used')

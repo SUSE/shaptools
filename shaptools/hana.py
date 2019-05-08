@@ -510,7 +510,7 @@ class HanaInstance:
 
         key_name or user_name/user_password parameters must be used
         Args:
-            ini_parameter_values(list): List containing HANA parameter details
+            ini_parameter_values (list): List containing HANA parameter details
             where each entry is a dictionary like below:
             {'section_name':'name', 'parameter_name':'param_name', 'parameter_value':'value'}
                 section_name (str): Section name of parameter in ini file

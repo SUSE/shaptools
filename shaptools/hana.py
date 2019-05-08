@@ -457,13 +457,13 @@ class HanaInstance:
 
         key_name or user_name/user_password parameters must be used
         Args:
-            parameter_str(list): list containing HANA parameter details in a dict format
+            parameter_str (list): List containing HANA parameter details in a dict format
             database (str): Database name
             file_name (str): INI configuration file name
             layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
             layer_name (str, optional): Target either a tenant name or a target host name
             reconfig (bool, optional): If apply changes to running HANA instance
-            set_value(bool, optional): Choose SET or UNSET operation to update parameters
+            set_value (bool, optional): Choose SET or UNSET operation to update parameters
             key_name (str, optional): Keystore to connect to sap hana db
             user_name (str, optional): User to connect to sap hana db
             user_password (str, optional): Password to connect to sap hana db
@@ -510,7 +510,7 @@ class HanaInstance:
 
         key_name or user_name/user_password parameters must be used
         Args:
-            ini_parameter_values(list): list containing HANA parameter details
+            ini_parameter_values(list): List containing HANA parameter details
             where each entry is a dictionary like below:
             {'section_name':'name', 'parameter_name':'param_name', 'parameter_value':'value'}
                 section_name (str): Section name of parameter in ini file
@@ -553,7 +553,7 @@ class HanaInstance:
 
         key_name or user_name/user_password parameters must be used
         Args:
-            ini_parameter_names(list): list containing HANA parameter details
+            ini_parameter_names (list): List containing HANA parameter details
             where each entry is a dictionary like below:
             {'section_name':'name', 'parameter_name':'param_name'}
                 section_name (str): Section name of parameter in ini file

@@ -377,13 +377,13 @@ class HanaInstance:
         Args:
             key_name (str, optional): Keystore to connect to sap hana db
             user_name (str, optional): User to connect to sap hana db
-            user_password (str, optiona): Password to connecto to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
         """
         if kwargs.get('key_name', None):
-            cmd = 'hdbsql -U {}'.format(kwargs['key_name'])
+            cmd = 'hdbsql -i {} -U {}'.format(self.inst, kwargs['key_name'])
         elif kwargs.get('user_name', None) and kwargs.get('user_password', None):
-            cmd = 'hdbsql -u {} -p {}'.format(
-                kwargs['user_name'], kwargs['user_password'])
+            cmd = 'hdbsql -i {} -u {} -p {}'.format(
+                self.inst, kwargs['user_name'], kwargs['user_password'])
         else:
             raise ValueError(
                 'key_name or user_name/user_password parameters must be used')
@@ -448,3 +448,135 @@ class HanaInstance:
         # (see SAPHana RA)
         status["status"] = SR_STATUS.get(result.returncode, SR_STATUS[12])
         return status
+
+    def _manage_ini_file(
+            self, parameter_str, database, file_name, layer,
+            **kwargs):
+        """
+        Construct command with HANA SQL to update configuration parameters in ini file
+
+        key_name or user_name/user_password parameters must be used
+        Args:
+            parameter_str (list): List containing HANA parameter details in a dict format
+            database (str): Database name
+            file_name (str): INI configuration file name
+            layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
+            layer_name (str, optional): Target either a tenant name or a target host name
+            reconfig (bool, optional): If apply changes to running HANA instance
+            set_value (bool, optional): Choose SET or UNSET operation to update parameters
+            key_name (str, optional): Keystore to connect to sap hana db
+            user_name (str, optional): User to connect to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
+        """
+        layer_name = kwargs.get('layer_name', None)
+        reconfig = kwargs.get('reconfig', False)
+        set_value = kwargs.get('set_value', True)
+        key_name = kwargs.get('key_name', None)
+        user_name = kwargs.get('user_name', None)
+        user_password = kwargs.get('user_password', None)
+
+        hdbsql_cmd = self._hdbsql_connect(
+            key_name=key_name, user_name=user_name, user_password=user_password)
+
+        if layer in ('HOST', 'DATABASE') and layer_name is not None:
+            layer_name_str = ', \'{}\''.format(layer_name)
+        else:
+            layer_name_str = ''
+
+        set_str = 'SET' if set_value else 'UNSET'
+        reconfig_option = ' WITH RECONFIGURE' if reconfig else ''
+
+        cmd = ('{hdbsql_cmd} -d {db} '
+               '\\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\'{layer_name}) '
+               '{set_str}{parameter_str}{reconfig};\\"'.format(
+                   hdbsql_cmd=hdbsql_cmd, db=database, file_name=file_name, layer=layer,
+                   layer_name=layer_name_str, set_str=set_str, parameter_str=parameter_str,
+                   reconfig=reconfig_option))
+
+        # TODO: return the HANA SQL Statement error if sql fails
+        self._run_hana_command(cmd)
+
+    def set_ini_parameter(
+            self, ini_parameter_values, database, file_name, layer,
+            **kwargs):
+        """
+        Set HANA configuration parameters in ini file
+
+        SQL syntax:
+        ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
+        SET (<section_name_1>,<parameter_name_1>) = <parameter_value_1>,
+            (<section_name_2>,<parameter_name_2>) = <parameter_value_2>
+        WITH RECONFIGURE
+
+        key_name or user_name/user_password parameters must be used
+        Args:
+            ini_parameter_values (list): List containing HANA parameter details
+            where each entry is a dictionary like below:
+            {'section_name':'name', 'parameter_name':'param_name', 'parameter_value':'value'}
+                section_name (str): Section name of parameter in ini file
+                parameter_name (str): Name of the parameter to be modified
+                parameter_value (str): The value of the parameter to be set
+            database (str): Database name
+            file_name (str): INI configuration file name
+            layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
+            layer_name (str, optional): Target either a tenant name or a target host name
+            reconfig (bool, optional): If apply changes to running HANA instance
+            key_name (str, optional): Keystore to connect to sap hana db
+            user_name (str, optional): User to connect to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
+        """
+
+        parameter_str = ', '.join("(\'{}\',\'{}\')=\'{}\'".format(
+            params['section_name'], params['parameter_name'],
+            params['parameter_value']) for params in ini_parameter_values)
+
+        layer_name = kwargs.get('layer_name', None)
+        reconfig = kwargs.get('reconfig', False)
+        key_name = kwargs.get('key_name', None)
+        user_name = kwargs.get('user_name', None)
+        user_password = kwargs.get('user_password', None)
+
+        self._manage_ini_file(parameter_str=parameter_str, database=database,
+                              file_name=file_name, layer=layer, layer_name=layer_name,
+                              set_value=True, reconfig=reconfig, key_name=key_name,
+                              user_name=user_name, user_password=user_password)
+
+    def unset_ini_parameter(
+            self, ini_parameter_names, database, file_name, layer,
+            **kwargs):
+        """
+        Unset HANA configuration parameters in ini file
+
+        SQL syntax:
+        ALTER SYSTEM ALTER CONFIGURATION (<filename>, <layer>[, <layer_name>])
+        UNSET (<section_name>,<parameter_name>);
+
+        key_name or user_name/user_password parameters must be used
+        Args:
+            ini_parameter_names (list): List containing HANA parameter details
+            where each entry is a dictionary like below:
+            {'section_name':'name', 'parameter_name':'param_name'}
+                section_name (str): Section name of parameter in ini file
+                parameter_name (str): Name of the parameter to be modified
+            database (str): Database name
+            file_name (str): INI configuration file name
+            layer (str): Target layer for the configuration change 'SYSTEM', 'HOST' or 'DATABASE'
+            layer_name (str, optional): Target either a tenant name or a target host name
+            reconfig (bool, optional): If apply changes to running HANA instance
+            key_name (str, optional): Keystore to connect to sap hana db
+            user_name (str, optional): User to connect to sap hana db
+            user_password (str, optional): Password to connect to sap hana db
+        """
+        parameter_str = ', '.join("(\'{}\',\'{}\')".format(
+            params['section_name'], params['parameter_name']) for params in ini_parameter_names)
+
+        layer_name = kwargs.get('layer_name', None)
+        reconfig = kwargs.get('reconfig', False)
+        key_name = kwargs.get('key_name', None)
+        user_name = kwargs.get('user_name', None)
+        user_password = kwargs.get('user_password', None)
+
+        self._manage_ini_file(parameter_str=parameter_str, database=database,
+                              file_name=file_name, layer=layer, layer_name=layer_name,
+                              set_value=False, reconfig=reconfig, key_name=key_name,
+                              user_name=user_name, user_password=user_password)

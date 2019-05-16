@@ -342,14 +342,118 @@ class TestHana(unittest.TestCase):
         self._hana.sr_disable_primary()
         mock_command.assert_called_once_with('hdbnsutil -sr_disable')
 
-    def test_register(self):
+    def test_copy_ssfs_files(self):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
+        self._hana.copy_ssfs_files('host', 'pass')
+        mock_command.assert_has_calls([
+            mock.call(
+                "sshpass -p {passwd} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
+                "{user}@{remote_host}:/usr/sap/{sid}/SYS/global/security/rsecssfs/data/SSFS_{sid}.DAT "\
+                "/usr/sap/{sid}/SYS/global/security/rsecssfs/data/SSFS_{sid}.DAT".format(
+                    passwd='pass', user='prdadm', remote_host='host', sid='PRD')),
+            mock.call(
+                "sshpass -p {passwd} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
+                "{user}@{remote_host}:/usr/sap/{sid}/SYS/global/security/rsecssfs/key/SSFS_{sid}.KEY "\
+                "/usr/sap/{sid}/SYS/global/security/rsecssfs/key/SSFS_{sid}.KEY".format(
+                    passwd='pass', user='prdadm', remote_host='host', sid='PRD')),
+        ])
+
+    @mock.patch('time.clock')
+    def test_register_basic(self, mock_clock):
+        mock_clock.return_value = 0
+        self._hana._run_hana_command = mock.Mock()
+        result_mock = mock.Mock(returncode=0)
+        self._hana._run_hana_command.return_value = result_mock
         self._hana.sr_register_secondary('test', 'host', 1, 'sync', 'ops')
-        mock_command.assert_called_once_with(
+        self._hana._run_hana_command.assert_called_once_with(
             'hdbnsutil -sr_register --name={} --remoteHost={} '\
             '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
-            'test', 'host', '01', 'sync', 'ops'))
+            'test', 'host', '01', 'sync', 'ops'), False)
+
+    @mock.patch('time.clock')
+    def test_register_copy_ssfs(self, mock_clock):
+        mock_clock.return_value = 0
+        self._hana._run_hana_command = mock.Mock()
+        result_mock = mock.Mock(returncode=149)
+        self._hana.copy_ssfs_files = mock.Mock()
+        self._hana._run_hana_command.return_value = result_mock
+        self._hana.sr_register_secondary('test', 'host', 1, 'sync', 'ops', primary_pass='pass')
+        self._hana._run_hana_command.assert_has_calls([
+            mock.call(
+                'hdbnsutil -sr_register --name={} --remoteHost={} '\
+                '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
+                'test', 'host', '01', 'sync', 'ops'), False),
+            mock.call(
+                'hdbnsutil -sr_register --name={} --remoteHost={} '\
+                '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
+                'test', 'host', '01', 'sync', 'ops'))
+        ])
+        self._hana.copy_ssfs_files.assert_called_once_with('host', 'pass')
+
+    @mock.patch('time.clock')
+    @mock.patch('time.sleep')
+    def test_register_loop(self, mock_sleep, mock_clock):
+        mock_clock.side_effect = [0, 1, 2, 3]
+        self._hana._run_hana_command = mock.Mock()
+        result_mock1 = mock.Mock(returncode=1)
+        result_mock2 = mock.Mock(returncode=1)
+        result_mock3 = mock.Mock(returncode=0)
+
+        self._hana._run_hana_command.side_effect = [result_mock1, result_mock2, result_mock3]
+
+        self._hana.sr_register_secondary('test', 'host', 1, 'sync', 'ops', timeout=5, interval=2)
+
+        self._hana._run_hana_command.assert_has_calls([
+            mock.call(
+                'hdbnsutil -sr_register --name={} --remoteHost={} '\
+                '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
+                'test', 'host', '01', 'sync', 'ops'), False),
+            mock.call(
+                'hdbnsutil -sr_register --name={} --remoteHost={} '\
+                '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
+                'test', 'host', '01', 'sync', 'ops'), False),
+            mock.call(
+                'hdbnsutil -sr_register --name={} --remoteHost={} '\
+                '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
+                'test', 'host', '01', 'sync', 'ops'), False)
+        ])
+        mock_sleep.assert_has_calls([mock.call(2), mock.call(2)])
+
+    @mock.patch('time.clock')
+    @mock.patch('time.sleep')
+    def test_register_error(self, mock_sleep, mock_clock):
+        mock_clock.side_effect = [0, 1, 2, 3]
+        self._hana._run_hana_command = mock.Mock()
+        result_mock1 = mock.Mock(returncode=1)
+        result_mock2 = mock.Mock(returncode=1)
+        result_mock3 = mock.Mock(returncode=1)
+
+        self._hana._run_hana_command.side_effect = [result_mock1, result_mock2, result_mock3]
+
+        with self.assertRaises(hana.HanaError) as err:
+            self._hana.sr_register_secondary(
+                'test', 'host', 1, 'sync', 'ops', timeout=2, interval=2)
+
+        self.assertTrue(
+            'System replication registration process failed after {} seconds'.format(2) in
+            str(err.exception))
+
+        self._hana._run_hana_command.assert_has_calls([
+            mock.call(
+                'hdbnsutil -sr_register --name={} --remoteHost={} '\
+                '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
+                'test', 'host', '01', 'sync', 'ops'), False),
+            mock.call(
+                'hdbnsutil -sr_register --name={} --remoteHost={} '\
+                '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
+                'test', 'host', '01', 'sync', 'ops'), False),
+            mock.call(
+                'hdbnsutil -sr_register --name={} --remoteHost={} '\
+                '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
+                'test', 'host', '01', 'sync', 'ops'), False)
+        ])
+        mock_sleep.assert_has_calls([mock.call(2), mock.call(2), mock.call(2)])
 
     def test_unregister(self):
         mock_command = mock.Mock()
@@ -507,7 +611,7 @@ class TestHana(unittest.TestCase):
             self._hana._run_hana_command.assert_called_once_with(
                 'HDBSettings.sh systemReplicationStatus.py', exception=False)
             self.assertEqual(status, {"status": expect})
-    
+
     def test_set_ini_parameter(self):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
@@ -527,7 +631,7 @@ class TestHana(unittest.TestCase):
             '{ini_parameter_values};\\"'.format(
             hdbsql='hdbsql', db='db', file_name='global.ini', layer='SYSTEM',
             ini_parameter_values='(\'memorymanager\',\'global_allocation_limit\')=\'25000\''))
-    
+
     def test_set_ini_parameter_layer(self):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
@@ -546,10 +650,10 @@ class TestHana(unittest.TestCase):
             '{hdbsql} -d {db} '\
             '\\"ALTER SYSTEM ALTER CONFIGURATION(\'{file_name}\', \'{layer}\', \'{layer_name}\') '
             'SET{ini_parameter_values};\\"'.format(
-            hdbsql='hdbsql', db='db', file_name='global.ini', 
+            hdbsql='hdbsql', db='db', file_name='global.ini',
             layer='HOST', layer_name='host01',
             ini_parameter_values='(\'memorymanager\',\'global_allocation_limit\')=\'25000\''))
-    
+
     def test_set_ini_parameter_reconfig(self):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
@@ -570,7 +674,7 @@ class TestHana(unittest.TestCase):
             hdbsql='hdbsql', db='db', file_name='global.ini', layer='SYSTEM',
             ini_parameter_values='(\'memorymanager\',\'global_allocation_limit\')=\'25000\'',
             reconfig=' WITH RECONFIGURE'))
-    
+
     def test_unset_ini_parameter(self):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
@@ -610,7 +714,7 @@ class TestHana(unittest.TestCase):
             '{ini_parameter_names};\\"'.format(
             hdbsql='hdbsql', db='db', file_name='global.ini', layer='HOST', layer_name='host01',
             ini_parameter_names='(\'memorymanager\',\'global_allocation_limit\')'))
-   
+
     def test_unset_ini_parameter_reconfig(self):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command

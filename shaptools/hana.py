@@ -17,6 +17,7 @@ from __future__ import print_function
 import logging
 import fileinput
 import re
+import time
 
 from shaptools import shell
 
@@ -69,6 +70,8 @@ class HanaInstance:
     # SID is usualy written uppercased, but the OS user is always created lower case.
     HANAUSER = '{sid}adm'.lower()
     SYNCMODES = ['sync', 'syncmem', 'async']
+    SUCCESSFULLY_REGISTERED = 0 # Node correctly registered as secondary node
+    SSFS_DIFFERENT_ERROR = 149 # ssfs files are different in the two nodes error return code
 
     def __init__(self, sid, inst, password):
         # Force instance nr always with 2 positions.
@@ -297,9 +300,32 @@ class HanaInstance:
         cmd = 'hdbnsutil -sr_disable'
         self._run_hana_command(cmd)
 
+    def copy_ssfs_files(self, remote_host, primary_pass):
+        """
+        Copy the ssfs data and key files to the secondary node
+
+        Args:
+            primary_pass: Password of the primary node
+        """
+        user = self.HANAUSER.format(sid=self.sid)
+        sid_upper = self.sid.upper()
+        cmd = \
+            "sshpass -p {passwd} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
+            "{user}@{remote_host}:/usr/sap/{sid}/SYS/global/security/rsecssfs/data/SSFS_{sid}.DAT "\
+            "/usr/sap/{sid}/SYS/global/security/rsecssfs/data/SSFS_{sid}.DAT".format(
+                passwd=primary_pass, user=user, remote_host=remote_host, sid=sid_upper)
+        self._run_hana_command(cmd)
+
+        cmd = \
+            "sshpass -p {passwd} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
+            "{user}@{remote_host}:/usr/sap/{sid}/SYS/global/security/rsecssfs/key/SSFS_{sid}.KEY "\
+            "/usr/sap/{sid}/SYS/global/security/rsecssfs/key/SSFS_{sid}.KEY".format(
+                passwd=primary_pass, user=user, remote_host=remote_host, sid=sid_upper)
+        self._run_hana_command(cmd)
+
     def sr_register_secondary(
             self, name, remote_host, remote_instance,
-            replication_mode, operation_mode):
+            replication_mode, operation_mode, **kwargs):
         """
         Register SAP HANA system replication as secondary node
 
@@ -309,12 +335,39 @@ class HanaInstance:
             remote_instance (str): Primary node instance
             replication_mode (str): Replication mode
             operation_mode (str): Operation mode
+            primary_password (str, optional): Password from node where system
+                replicationis is enabled. Current node password will be used by
+                default (xxxadm sap user password)
+            timeout (int, optional): Timeout to try to register the node in seconds
+            interval (int, optional): Retry interval in seconds
+
         """
+        timeout = kwargs.get('timeout', 0)
+        interval = kwargs.get('interval', 5)
+        primary_pass = kwargs.get('primary_password', self._password)
+
         remote_instance = '{:0>2}'.format(remote_instance)
         cmd = 'hdbnsutil -sr_register --name={} --remoteHost={} '\
               '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
                   name, remote_host, remote_instance, replication_mode, operation_mode)
-        self._run_hana_command(cmd)
+
+        current_time = time.clock()
+        current_timeout = current_time + timeout
+        while current_time <= current_timeout:
+            return_code = self._run_hana_command(cmd, False).returncode
+            if return_code == self.SUCCESSFULLY_REGISTERED:
+                break
+            elif return_code == self.SSFS_DIFFERENT_ERROR:
+                self.copy_ssfs_files(remote_host, primary_pass)
+                self._run_hana_command(cmd)
+                break
+            time.sleep(interval)
+            current_time = time.clock()
+            continue
+        else:
+            raise HanaError(
+                'System replication registration process failed after {} seconds'.format(
+                    timeout))
 
     def sr_unregister_secondary(self, primary_name):
         """

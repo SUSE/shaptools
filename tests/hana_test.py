@@ -342,22 +342,28 @@ class TestHana(unittest.TestCase):
         self._hana.sr_disable_primary()
         mock_command.assert_called_once_with('hdbnsutil -sr_disable')
 
-    def test_copy_ssfs_files(self):
-        mock_command = mock.Mock()
-        self._hana._run_hana_command = mock_command
-        self._hana.copy_ssfs_files('host', 'pass')
-        mock_command.assert_has_calls([
+    @mock.patch('shaptools.shell.create_ssh_askpass')
+    def test_copy_ssfs_files(self, mock_sshpass):
+        mock_sshpass.side_effect = ['cmd1', 'cmd2']
+        self._hana._run_hana_command = mock.Mock()
+        self._hana.copy_ssfs_files('host', 'prim_pass')
+        mock_sshpass.assert_has_calls([
             mock.call(
-                "sshpass -p {passwd} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
-                "{user}@{remote_host}:/usr/sap/{sid}/SYS/global/security/rsecssfs/data/SSFS_{sid}.DAT "\
-                "/usr/sap/{sid}/SYS/global/security/rsecssfs/data/SSFS_{sid}.DAT".format(
-                    passwd='pass', user='prdadm', remote_host='host', sid='PRD')),
+                'prim_pass', "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
+                '{user}@{remote_host}:/usr/sap/{sid}/SYS/global/security/rsecssfs/data/SSFS_{sid}.DAT '\
+                '/usr/sap/{sid}/SYS/global/security/rsecssfs/data/SSFS_{sid}.DAT'.format(
+                    user='prdadm', remote_host='host', sid='PRD')),
             mock.call(
-                "sshpass -p {passwd} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
-                "{user}@{remote_host}:/usr/sap/{sid}/SYS/global/security/rsecssfs/key/SSFS_{sid}.KEY "\
-                "/usr/sap/{sid}/SYS/global/security/rsecssfs/key/SSFS_{sid}.KEY".format(
-                    passwd='pass', user='prdadm', remote_host='host', sid='PRD')),
+                'prim_pass', 'scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null '\
+                '{user}@{remote_host}:/usr/sap/{sid}/SYS/global/security/rsecssfs/key/SSFS_{sid}.KEY '\
+                '/usr/sap/{sid}/SYS/global/security/rsecssfs/key/SSFS_{sid}.KEY'.format(
+                    user='prdadm', remote_host='host', sid='PRD')),
         ])
+        self._hana._run_hana_command.assert_has_calls([
+            mock.call('cmd1'),
+            mock.call('cmd2'),
+        ])
+
 
     @mock.patch('time.clock')
     def test_register_basic(self, mock_clock):

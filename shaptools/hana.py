@@ -310,17 +310,19 @@ class HanaInstance:
         user = self.HANAUSER.format(sid=self.sid)
         sid_upper = self.sid.upper()
         cmd = \
-            "sshpass -p {passwd} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
+            "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
             "{user}@{remote_host}:/usr/sap/{sid}/SYS/global/security/rsecssfs/data/SSFS_{sid}.DAT "\
             "/usr/sap/{sid}/SYS/global/security/rsecssfs/data/SSFS_{sid}.DAT".format(
-                passwd=primary_pass, user=user, remote_host=remote_host, sid=sid_upper)
+                user=user, remote_host=remote_host, sid=sid_upper)
+        cmd = shell.create_ssh_askpass(primary_pass, cmd)
         self._run_hana_command(cmd)
 
         cmd = \
-            "sshpass -p {passwd} scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
+            "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\
             "{user}@{remote_host}:/usr/sap/{sid}/SYS/global/security/rsecssfs/key/SSFS_{sid}.KEY "\
             "/usr/sap/{sid}/SYS/global/security/rsecssfs/key/SSFS_{sid}.KEY".format(
-                passwd=primary_pass, user=user, remote_host=remote_host, sid=sid_upper)
+                user=user, remote_host=remote_host, sid=sid_upper)
+        cmd = shell.create_ssh_askpass(primary_pass, cmd)
         self._run_hana_command(cmd)
 
     def sr_register_secondary(

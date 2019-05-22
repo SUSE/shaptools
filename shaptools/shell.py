@@ -9,11 +9,13 @@ Module to interact with the shell commands.
 """
 
 import logging
+import os
 import subprocess
 import shlex
 import re
 
 LOGGER = logging.getLogger('shell')
+ASKPASS_SCRIPT = 'support/ssh_askpass'
 
 
 class ProcessResult:
@@ -78,6 +80,22 @@ def format_su_cmd(cmd, user):
         str: Formatted command
     """
     return 'su -lc "{cmd}" {user}'.format(cmd=cmd, user=user)
+
+
+def create_ssh_askpass(password, cmd):
+    """
+    Create ask pass command
+    Note: subprocess os.setsid doesn't work as the user might have a password
+
+    Args:
+        password (str): ssh command password
+        cmd (str): Command to run
+    """
+    dirname = os.path.dirname(__file__)
+    ask_pass_script = os.path.join(dirname, ASKPASS_SCRIPT)
+    ssh_askpass_str = 'export SSH_ASKPASS={};export PASS={};export DISPLAY=:0;setsid {}'.format(
+        ask_pass_script, password, cmd)
+    return ssh_askpass_str
 
 
 def execute_cmd(cmd, user=None, password=None):

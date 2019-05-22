@@ -44,7 +44,9 @@ SCRIPTS = []
 
 DEPENDENCIES = read('requirements.txt').split()
 
-PACKAGE_DATA = {}
+PACKAGE_DATA = {
+    'shaptools': ['support/ssh_askpass']
+}
 DATA_FILES = []
 
 

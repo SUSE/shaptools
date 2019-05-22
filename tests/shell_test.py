@@ -172,3 +172,16 @@ class TestShell(unittest.TestCase):
         mock_process.assert_called_once_with('updated command', 5, b'out', b'err')
 
         self.assertEqual(mock_process_inst, result)
+
+    @mock.patch('os.path')
+    def test_create_ssh_askpass(self, mock_path):
+
+
+        mock_path.dirname.return_value = 'file'
+        mock_path.join.return_value = 'file/support/ssh_askpass'
+
+        result = shell.create_ssh_askpass('pass', 'my_command')
+
+        self.assertEqual(
+            'export SSH_ASKPASS=file/support/ssh_askpass;export PASS=pass;export DISPLAY=:0;setsid my_command',
+            result)

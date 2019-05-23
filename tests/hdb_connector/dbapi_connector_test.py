@@ -101,7 +101,7 @@ class TestDbapiConnector(unittest.TestCase):
         self._conn._connection = mock.Mock()
         self._conn._connection.cursor.return_value = context_manager_mock
 
-        response = self._conn.query('query')
+        meta_data, response = self._conn.query('query')
 
         cursor_mock_instance.execute.assert_called_once_with('query')
         cursor_mock_instance.fetchall.assert_called_once_with()

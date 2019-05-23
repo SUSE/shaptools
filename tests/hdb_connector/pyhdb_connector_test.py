@@ -98,7 +98,7 @@ class TestHDBConnector(unittest.TestCase):
         self._conn._connection = mock.Mock()
         self._conn._connection.cursor.return_value = mock_cursor
 
-        response = self._conn.query('query')
+        meta_data, response = self._conn.query('query')
 
         mock_cursor.execute.assert_called_once_with('query')
         mock_cursor.fetchall.assert_called_once_with()

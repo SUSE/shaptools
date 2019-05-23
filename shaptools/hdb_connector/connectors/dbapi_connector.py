@@ -77,7 +77,7 @@ class DbapiConnector(base_connector.BaseConnector):
 
     def disconnect(self):
         """
-        Disconnecto from SAP HANA database
+        Disconnected from SAP HANA database
         """
         self._logger.info('disconnecting from SAP HANA database')
         self._connection.close()

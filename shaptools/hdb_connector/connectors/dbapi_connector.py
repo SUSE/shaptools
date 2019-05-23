@@ -73,8 +73,6 @@ class DbapiConnector(base_connector.BaseConnector):
                 result = DbapiQueryResult(cursor)
         except dbapi.Error as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
-        finally:
-            cursor.close()
         return result
 
     def disconnect(self):

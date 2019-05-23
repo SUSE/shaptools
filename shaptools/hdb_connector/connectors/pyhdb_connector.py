@@ -73,10 +73,9 @@ class PyhdbConnector(base_connector.BaseConnector):
             cursor = self._connection.cursor()
             cursor.execute(sql_statement)
             result = PyhdbQueryResult(cursor)
+            cursor.close()
         except pyhdb.exceptions.DatabaseError as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
-        finally:
-            cursor.close()
         return result
 
     def disconnect(self):

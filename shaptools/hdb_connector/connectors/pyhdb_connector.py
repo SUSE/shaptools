@@ -53,7 +53,7 @@ class PyhdbConnector(base_connector.BaseConnector):
 
     def query(self, sql_statement):
         """
-        Query a sql statement and return response
+        Query a sql statement and return a response and a response meta data
         """
         self._logger.info('executing sql query: %s' % sql_statement)
         try:
@@ -65,6 +65,7 @@ class PyhdbConnector(base_connector.BaseConnector):
         except pyhdb.exceptions.DatabaseError as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
         self._logger.info('query result: %s' % result)
+        self._logger.info('query result meta data: %s' % meta_data)
         return meta_data, result
 
     def disconnect(self):

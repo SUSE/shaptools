@@ -109,6 +109,7 @@ class TestDbapiConnector(unittest.TestCase):
         self.assertEqual(response.data, 'result')
         mock_logger.assert_has_calls([
             mock.call('executing sql query: %s' % 'query'),
+            mock.call('query result object created'),
             mock.call('query result: %s' % 'result')
         ])
 

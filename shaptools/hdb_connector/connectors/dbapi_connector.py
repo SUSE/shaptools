@@ -59,10 +59,11 @@ class DbapiConnector(base_connector.BaseConnector):
             with self._connection.cursor() as cursor:
                 cursor.execute(sql_statement)
                 result = cursor.fetchall()
+                meta_data = cursor.description
         except dbapi.Error as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
         self._logger.info('query result: %s' % result)
-        return result
+        return meta_data, result
 
     def disconnect(self):
         """

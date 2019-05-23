@@ -60,11 +60,12 @@ class PyhdbConnector(base_connector.BaseConnector):
             cursor = self._connection.cursor()
             cursor.execute(sql_statement)
             result = cursor.fetchall()
+            meta_data = cursor.description
             cursor.close()
         except pyhdb.exceptions.DatabaseError as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
         self._logger.info('query result: %s' % result)
-        return result
+        return meta_data, result
 
     def disconnect(self):
         """

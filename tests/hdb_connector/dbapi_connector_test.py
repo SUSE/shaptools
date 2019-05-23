@@ -71,7 +71,7 @@ class TestDbapiConnector(unittest.TestCase):
             address='host', port=1234, user='user', password='pass')
         mock_logger.assert_has_calls([
             mock.call('connecting to SAP HANA database at %s:%s' % ('host', 1234)),
-            mock.call('connected succesfully')
+            mock.call('connected successfully')
         ])
 
     @mock.patch('shaptools.hdb_connector.connectors.dbapi_connector.dbapi')
@@ -101,12 +101,12 @@ class TestDbapiConnector(unittest.TestCase):
         self._conn._connection = mock.Mock()
         self._conn._connection.cursor.return_value = context_manager_mock
 
-        meta_data, response = self._conn.query('query')
+        response = self._conn.query('query')
 
         cursor_mock_instance.execute.assert_called_once_with('query')
         cursor_mock_instance.fetchall.assert_called_once_with()
 
-        self.assertEqual(response, 'result')
+        self.assertEqual(response.data, 'result')
         mock_logger.assert_has_calls([
             mock.call('executing sql query: %s' % 'query'),
             mock.call('query result: %s' % 'result')
@@ -132,5 +132,5 @@ class TestDbapiConnector(unittest.TestCase):
         self._conn._connection.close.assert_called_once_with()
         mock_logger.assert_has_calls([
             mock.call('disconnecting from SAP HANA database'),
-            mock.call('disconnected succesfully')
+            mock.call('disconnected successfully')
         ])

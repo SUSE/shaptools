@@ -17,6 +17,19 @@ import pyhdb
 from shaptools.hdb_connector.connectors import base_connector
 
 
+class PyhdbQueryResult(base_connector.QueryResult):
+    """
+    Class to manage pyhdb query result
+    """
+
+    def __init__(self, cursor):
+        super(PyhdbQueryResult, self).__init__()
+        self._logger.info('query result object created')
+        self.data = cursor.fetchall()
+        self.meta_data = cursor.description
+        self._logger.info('query result: %s' % self.data)
+
+
 class PyhdbConnector(base_connector.BaseConnector):
     """
     Class to manage pyhdb connection and queries
@@ -49,29 +62,27 @@ class PyhdbConnector(base_connector.BaseConnector):
             )
         except socket.error as err:
             raise base_connector.ConnectionError('connection failed: {}'.format(err))
-        self._logger.info('connected succesfully')
+        self._logger.info('connected successfully')
 
     def query(self, sql_statement):
         """
-        Query a sql statement and return a response and a response meta data
+        Query a sql query result and return  a result object
         """
         self._logger.info('executing sql query: %s' % sql_statement)
         try:
             cursor = self._connection.cursor()
             cursor.execute(sql_statement)
-            result = cursor.fetchall()
-            meta_data = cursor.description
-            cursor.close()
+            result = PyhdbQueryResult(cursor)
         except pyhdb.exceptions.DatabaseError as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
-        self._logger.info('query result: %s' % result)
-        self._logger.info('query result meta data: %s' % meta_data)
-        return meta_data, result
+        finally:
+            cursor.close()
+        return result
 
     def disconnect(self):
         """
-        Disconnecto from SAP HANA database
+        Disconnected from SAP HANA database
         """
         self._logger.info('disconnecting from SAP HANA database')
         self._connection.close()
-        self._logger.info('disconnected succesfully')
+        self._logger.info('disconnected successfully')

@@ -34,6 +34,19 @@ class QueryError(BaseError):
     Error during query
     """
 
+class QueryResult(object):
+    """
+    Query result
+
+    Args:
+        cursor (cursor): sql cursor object
+    """
+
+    def __init__(self):
+        self._logger = logging.getLogger(__name__)
+        self.data = None
+        self.meta_data = None
+
 
 class BaseConnector(object):
     """

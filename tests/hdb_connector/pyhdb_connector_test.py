@@ -71,7 +71,7 @@ class TestHDBConnector(unittest.TestCase):
             host='host', port=1234, user='user', password='pass')
         mock_logger.assert_has_calls([
             mock.call('connecting to SAP HANA database at %s:%s' % ('host', 1234)),
-            mock.call('connected succesfully')
+            mock.call('connected successfully')
         ])
 
     @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.socket')
@@ -98,12 +98,12 @@ class TestHDBConnector(unittest.TestCase):
         self._conn._connection = mock.Mock()
         self._conn._connection.cursor.return_value = mock_cursor
 
-        meta_data, response = self._conn.query('query')
+        response = self._conn.query('query')
 
         mock_cursor.execute.assert_called_once_with('query')
         mock_cursor.fetchall.assert_called_once_with()
 
-        self.assertEqual(response, 'result')
+        self.assertEqual(response.data, 'result')
         mock_logger.assert_has_calls([
             mock.call('executing sql query: %s' % 'query'),
             mock.call('query result: %s' % 'result')
@@ -129,5 +129,5 @@ class TestHDBConnector(unittest.TestCase):
         self._conn._connection.close.assert_called_once_with()
         mock_logger.assert_has_calls([
             mock.call('disconnecting from SAP HANA database'),
-            mock.call('disconnected succesfully')
+            mock.call('disconnected successfully')
         ])

@@ -43,7 +43,6 @@ class QueryResult(object):
     """
 
     def __init__(self):
-        self._logger = logging.getLogger(__name__)
         self.data = None
         self.meta_data = None
 

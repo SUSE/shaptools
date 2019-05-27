@@ -16,18 +16,6 @@ from hdbcli import dbapi
 from shaptools.hdb_connector.connectors import base_connector
 
 
-class DbapiQueryResult(base_connector.QueryResult):
-    """
-    Class to manage Dbapi query result
-    """
-
-    def __init__(self, cursor):
-        super(DbapiQueryResult, self).__init__()
-        self._logger.info('query result object created')
-        self.data = cursor.fetchall()
-        self.meta_data = cursor.description
-        self._logger.info('query result: %s' % self.data)
-
 class DbapiConnector(base_connector.BaseConnector):
     """
     Class to manage dbapi connection and queries
@@ -70,14 +58,14 @@ class DbapiConnector(base_connector.BaseConnector):
         try:
             with self._connection.cursor() as cursor:
                 cursor.execute(sql_statement)
-                result = DbapiQueryResult(cursor)
+                result = base_connector.QueryResult().fetch_query(cursor)
         except dbapi.Error as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
         return result
 
     def disconnect(self):
         """
-        Disconnected from SAP HANA database
+        Disconnect from SAP HANA database
         """
         self._logger.info('disconnecting from SAP HANA database')
         self._connection.close()

@@ -36,15 +36,28 @@ class QueryError(BaseError):
 
 class QueryResult(object):
     """
-    Query result
+    Class to manage query results
 
     Args:
         cursor (cursor): sql cursor object
     """
 
     def __init__(self):
+        self._logger = logging.getLogger(__name__)
         self.data = None
         self.meta_data = None
+
+    def fetch_query(self, cursor):
+        """
+        Fetch query result
+
+        Args:
+            data (str): Result set returned after the query execution
+            meta_data (str): Meta data about the result set
+        """
+        self.data = cursor.fetchall()
+        self.meta_data = cursor.description
+        self._logger.info('query result: %s' % self.data)
 
 
 class BaseConnector(object):
@@ -81,7 +94,7 @@ class BaseConnector(object):
 
     def disconnect(self):
         """
-        Disconnecto from SAP HANA database
+        Disconnect from SAP HANA database
         """
         raise NotImplementedError(
             'method must be implemented in inherited connectors')

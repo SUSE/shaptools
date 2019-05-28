@@ -42,23 +42,25 @@ class QueryResult(object):
         cursor (cursor): sql cursor object
     """
 
-    def __init__(self):
+    def __init__(self, records, metadata):
         self._logger = logging.getLogger(__name__)
-        self.data = None
-        self.meta_data = None
+        self.records = records
+        self.metadata = metadata
 
-    def fetch_query(self, cursor):
+
+    @classmethod
+    def load_cursor(cls, cursor):
         """
-        Fetch query result
+        load cursor and extract records and metadata
 
         Args:
-            data (str): Result set returned after the query execution
-            meta_data (str): Meta data about the result set
+            cursor (obj): Cursor object created by the connector (dbapi or pydhb)
         """
-        self.data = cursor.fetchall()
-        self.meta_data = cursor.description
-        self._logger.info('query result: %s' % self.data)
-
+        instance = cls()
+        instance.records = cursor.fetchall()
+        instance.metadata = cursor.description
+        instance._logger.info('query records: %s', instance.records)
+        return instance
 
 class BaseConnector(object):
     """

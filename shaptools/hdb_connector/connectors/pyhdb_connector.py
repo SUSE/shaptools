@@ -53,13 +53,13 @@ class PyhdbConnector(base_connector.BaseConnector):
 
     def query(self, sql_statement):
         """
-        Query a sql query result and return  a result object
+        Query a sql query result and return a result object
         """
         self._logger.info('executing sql query: %s' % sql_statement)
         try:
             cursor = self._connection.cursor()
             cursor.execute(sql_statement)
-            result = result = base_connector.QueryResult().fetch_query(cursor)
+            result = base_connector.QueryResult.load_cursor(cursor)
             cursor.close()
         except pyhdb.exceptions.DatabaseError as err:
             raise base_connector.QueryError('query failed: {}'.format(err))

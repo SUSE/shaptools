@@ -58,7 +58,7 @@ class DbapiConnector(base_connector.BaseConnector):
         try:
             with self._connection.cursor() as cursor:
                 cursor.execute(sql_statement)
-                result = base_connector.QueryResult().fetch_query(cursor)
+                result = base_connector.QueryResult.load_cursor(cursor)
         except dbapi.Error as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
         return result

@@ -39,7 +39,8 @@ class QueryResult(object):
     Class to manage query results
 
     Args:
-        cursor (cursor): sql cursor object
+        records (list of tuples): rows of a query result
+        metadata (tuple): Sequence of 7-item sequences that describe one result column
     """
 
     def __init__(self, records, metadata):
@@ -57,7 +58,7 @@ class QueryResult(object):
             cursor (obj): Cursor object created by the connector (dbapi or pydhb)
         """
         instance = cls()
-        instance.records = cursor.fetchall()
+        instance.records = cursor.fetchall() # TODO catch any exceptions raised by fetchall()
         instance.metadata = cursor.description
         instance._logger.info('query records: %s', instance.records)
         return instance

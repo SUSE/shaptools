@@ -23,9 +23,51 @@ except ImportError:
     import mock
 
 
+class TestQueryResul(unittest.TestCase):
+    """
+    Unitary tests for base_connector.py QueryResult class
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        """
+        Global setUp.
+        """
+
+        logging.basicConfig(level=logging.INFO)
+        from shaptools.hdb_connector.connectors import base_connector
+        cls._base_connector = base_connector
+
+    def setUp(self):
+        """
+        Test setUp.
+        """
+
+    def tearDown(self):
+        """
+        Test tearDown.
+        """
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Global tearDown.
+        """
+
+    @mock.patch('logging.Logger.info')
+    def test_load_cursor(self, logger):
+        mock_cursor = mock.Mock()
+        mock_cursor.description = 'metadata'
+        mock_cursor.fetchall.return_value = ['data1', 'data2']
+        result = self._base_connector.QueryResult.load_cursor(mock_cursor)
+        logger.assert_called_once_with('query records: %s', ['data1', 'data2'])
+        self.assertEqual(result.records, ['data1', 'data2'])
+        self.assertEqual(result.metadata, 'metadata')
+
+
 class TestHana(unittest.TestCase):
     """
-    Unitary tests for hana.py.
+    Unitary tests for base_connector.py BaseConnector class
     """
 
     @classmethod

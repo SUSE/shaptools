@@ -56,9 +56,9 @@ class QueryResult(object):
         Args:
             cursor (obj): Cursor object created by the connector (dbapi or pydhb)
         """
-        instance = cls()
-        instance.records = cursor.fetchall() # TODO catch any exceptions raised by fetchall()
-        instance.metadata = cursor.description
+        records = cursor.fetchall() # TODO: catch any exceptions raised by fetchall()
+        metadata = cursor.description
+        instance = cls(records, metadata)
         instance._logger.info('query records: %s', instance.records)
         return instance
 

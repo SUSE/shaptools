@@ -39,7 +39,7 @@ class PyhdbConnector(base_connector.BaseConnector):
             user (str): Existing username in the database
             password (str): User password
         """
-        self._logger.info('connecting to SAP HANA database at %s:%s' % (host, port))
+        self._logger.info('connecting to SAP HANA database at %s:%s', host, port)
         try:
             self._connection = pyhdb.connect(
                 host=host,
@@ -55,7 +55,7 @@ class PyhdbConnector(base_connector.BaseConnector):
         """
         Query a sql query result and return a result object
         """
-        self._logger.info('executing sql query: %s' % sql_statement)
+        self._logger.info('executing sql query: %s', sql_statement)
         try:
             cursor = self._connection.cursor()
             cursor.execute(sql_statement)

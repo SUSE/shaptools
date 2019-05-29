@@ -48,7 +48,6 @@ class QueryResult(object):
         self.records = records
         self.metadata = metadata
 
-
     @classmethod
     def load_cursor(cls, cursor):
         """

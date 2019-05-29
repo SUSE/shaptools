@@ -38,7 +38,7 @@ class DbapiConnector(base_connector.BaseConnector):
             user (str): Existing username in the database
             password (str): User password
         """
-        self._logger.info('connecting to SAP HANA database at %s:%s' % (host, port))
+        self._logger.info('connecting to SAP HANA database at %s:%s', host, port)
         try:
             self._connection = dbapi.connect(
                 address=host,
@@ -48,26 +48,25 @@ class DbapiConnector(base_connector.BaseConnector):
             )
         except dbapi.Error as err:
             raise base_connector.ConnectionError('connection failed: {}'.format(err))
-        self._logger.info('connected succesfully')
+        self._logger.info('connected successfully')
 
     def query(self, sql_statement):
         """
-        Query a sql statement and return response
+        Query a sql query result and return a result object
         """
-        self._logger.info('executing sql query: %s' % sql_statement)
+        self._logger.info('executing sql query: %s', sql_statement)
         try:
             with self._connection.cursor() as cursor:
                 cursor.execute(sql_statement)
-                result = cursor.fetchall()
+                result = base_connector.QueryResult.load_cursor(cursor)
         except dbapi.Error as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
-        self._logger.info('query result: %s' % result)
         return result
 
     def disconnect(self):
         """
-        Disconnecto from SAP HANA database
+        Disconnect from SAP HANA database
         """
         self._logger.info('disconnecting from SAP HANA database')
         self._connection.close()
-        self._logger.info('disconnected succesfully')
+        self._logger.info('disconnected successfully')

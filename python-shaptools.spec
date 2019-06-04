@@ -14,6 +14,12 @@
 
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 
+%if 0%{?suse_version} < 1500
+%bcond_with test
+%else
+%bcond_without test
+%endif
+
 %{?!python_module:%define python_module() python-%{**} python3-%{**}}
 Name:           python-shaptools
 Version:        0.2.0
@@ -23,8 +29,10 @@ License:        Apache-2.0
 Group:          Development/Languages/Python
 Url:            https://github.com/SUSE/shaptools
 Source:         shaptools-%{version}.tar.gz
+%if %{with test}
 BuildRequires:  %{python_module mock}
 BuildRequires:  %{python_module pytest}
+%endif
 BuildRequires:  %{python_module setuptools}
 BuildRequires:  fdupes
 BuildRequires:  python-rpm-macros
@@ -46,8 +54,10 @@ API to expose SAP HANA functionalities
 # do not install tests
 %python_expand rm -r %{buildroot}%{$python_sitelib}/tests
 
+%if %{with test}
 %check
 %pytest tests
+%endif
 
 %files %{python_files}
 %doc README.md

@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Jun  4 07:23:40 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
+
+- Create package version 0.2.0 with the latest changes 
+
+-------------------------------------------------------------------
 Wed May 29 12:26:08 UTC 2019 - Ayoub Belarbi (abelarbi@suse.com)
 
 - Update hdb connector to return metadata besides the query

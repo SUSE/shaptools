@@ -14,70 +14,44 @@
 
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 
+%{?!python_module:%define python_module() python-%{**} python3-%{**}}
 Name:           python-shaptools
-Version:        0.1.0
+Version:        0.2.0
 Release:        0
-License:        Apache-2.0
 Summary:        Python tools to interact with SAP HANA utilities
-Url:            https://github.com/SUSE/shaptools
+License:        Apache-2.0
 Group:          Development/Languages/Python
+Url:            https://github.com/SUSE/shaptools
 Source:         shaptools-%{version}.tar.gz
-BuildRequires:  python-devel python3-devel
-BuildRequires:  python-setuptools python3-setuptools
+BuildRequires:  %{python_module mock}
+BuildRequires:  %{python_module pytest}
+BuildRequires:  %{python_module setuptools}
 BuildRequires:  fdupes
+BuildRequires:  python-rpm-macros
 BuildArch:      noarch
+%python_subpackages
 
 %description
 API to expose SAP HANA functionalities
-
-%package -n python2-shaptools
-Summary:        Python tools to interact with SAP HANA utilities (python2)
-%{?python_provide:%python_provide python2-shaptools}
-
-%description -n python2-shaptools
-API to expose SAP HANA functionalities (python2)
-
-%package -n python3-shaptools
-Summary:        Python tools to interact with SAP HANA utilities (python3)
-%{?python_provide:%python_provide python3-shaptools}
-
-%description -n python3-shaptools
-API to expose SAP HANA functionalities (python3)
 
 %prep
 %setup -q -n shaptools-%{version}
 
 %build
-python2 setup.py build --build-lib=py2/build/lib
-python3 setup.py build --build-lib=py3/build/lib
+%python_build
 
 %install
-mv py2/build .
-python2 setup.py install -O1 --skip-build --force --root %{buildroot} --prefix=%{_prefix}
-%fdupes %{buildroot}%python_sitelib
-rm -rf build
-mv py3/build .
-python3 setup.py install -O1 --skip-build --force --root %{buildroot} --prefix=%{_prefix}
-%fdupes %{buildroot}%python3_sitelib
+%python_install
+%python_expand %fdupes %{buildroot}%{$python_sitelib}
+# do not install tests
+%python_expand rm -r %{buildroot}%{$python_sitelib}/tests
 
-%files -n python2-shaptools
-%doc CHANGELOG.md README.md
-# %license macro is not available on older releases
-%if 0%{?sle_version} <= 120300
-%doc LICENSE
-%else
+%check
+%pytest tests
+
+%files %{python_files}
+%doc README.md
 %license LICENSE
-%endif
 %{python_sitelib}/*
-
-%files -n python3-shaptools
-%doc CHANGELOG.md README.md
-# %license macro is not available on older releases
-%if 0%{?sle_version} <= 120300
-%doc LICENSE
-%else
-%license LICENSE
-%endif
-%{python3_sitelib}/*
 
 %changelog

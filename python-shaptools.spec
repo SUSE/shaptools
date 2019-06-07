@@ -60,8 +60,12 @@ API to expose SAP HANA functionalities
 %endif
 
 %files %{python_files}
+%if 0%{?sle_version:1} && 0%{?sle_version} < 120300
+%doc README.md LICENSE
+%else
 %doc README.md
 %license LICENSE
+%endif
 %{python_sitelib}/*
 
 %changelog

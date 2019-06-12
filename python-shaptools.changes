@@ -3,7 +3,7 @@ Tue Jun 11 11:29:44 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
 
 - Create package version 0.2.1 with fixed spec files. Now the package
   is available from SLE12-SP2 to SLE15 versions
-  (jsc#SLE-4031, jsc#SLE-4143)
+  (jsc#SLE-4031, jsc#SLE-4143, boo#1137989)
 
 -------------------------------------------------------------------
 Tue Jun  4 07:23:40 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>

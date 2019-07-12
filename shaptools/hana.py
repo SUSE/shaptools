@@ -67,12 +67,10 @@ class HanaInstance(object):
     """
 
     PATH = '/usr/sap/{sid}/HDB{inst}/'
-    INSTALL_EXEC = '{software_path}/DATA_UNITS/{platform}/hdblcm'
-    PLATFORMS = {
-        'x86_64': 'HDB_LCM_LINUX_X86_64',
-        'ppc64': 'HDB_LCM_LINUX_PPC64',
-        'ppc64le': 'HDB_LCM_LINUX_PPC64LE'
-    }
+    INSTALL_EXEC = '{software_path}/DATA_UNITS/HDB_LCM_LINUX_{platform}/hdblcm'
+    SUPPORTED_PLATFORMS = [
+        'x86_64', 'ppc64le'
+    ]
     # SID is usualy written uppercased, but the OS user is always created lower case.
     HANAUSER = '{sid}adm'.lower()
     SYNCMODES = ['sync', 'syncmem', 'async']
@@ -92,18 +90,16 @@ class HanaInstance(object):
         self._password = password
 
     @classmethod
-    def get_platform_folder(cls):
+    def get_platform(cls):
         """
         Get the SAP HANA installation folder by platform
         """
         current_platform = platform.machine()
         logger = logging.getLogger('__name__')
         logger.info('current platform is %s', current_platform)
-        try:
-            logger.info('used folder: %s', cls.PLATFORMS[current_platform])
-            return cls.PLATFORMS[current_platform]
-        except KeyError:
-            raise KeyError('not supported platform: {}'.format(current_platform))
+        if current_platform not in cls.SUPPORTED_PLATFORMS:
+            raise ValueError('not supported platform: {}'.format(current_platform))
+        return current_platform.upper()
 
     def _run_hana_command(self, cmd, exception=True):
         """
@@ -175,7 +171,7 @@ class HanaInstance(object):
             root_user (str): Root user name
             root_password (str): Root user password
         """
-        platform_folder = cls.get_platform_folder()
+        platform_folder = cls.get_platform()
         executable = cls.INSTALL_EXEC.format(software_path=software_path, platform=platform_folder)
         cmd = '{executable} --action=install '\
             '--dump_configfile_template={conf_file}'.format(
@@ -198,7 +194,7 @@ class HanaInstance(object):
         """
         # TODO: mount partition if needed
         # TODO: do some integrity check stuff
-        platform_folder = cls.get_platform_folder()
+        platform_folder = cls.get_platform()
         executable = cls.INSTALL_EXEC.format(software_path=software_path, platform=platform_folder)
         cmd = '{executable} -b --configfile={conf_file}'.format(
             executable=executable, conf_file=conf_file)

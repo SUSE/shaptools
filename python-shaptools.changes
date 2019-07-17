@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Jul 17 09:34:22 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
+
+- Create package version 0.3.0
+- shapcli is provided to expose shaptools api methodsas command line tool 
+
+-------------------------------------------------------------------
 Tue Jun 11 11:29:44 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
 
 - Create package version 0.2.1 with fixed spec files. Now the package

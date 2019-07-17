@@ -52,6 +52,9 @@ def parse_arguments():
     parser.add_argument(
         '--verbosity',
         help='Python logging level. Options: DEBUG, INFO, WARN, ERROR (INFO by default)')
+    parser.add_argument(
+        '--remotely',
+        help='Run the command in other machine using ssh')
 
     parser.add_argument(
         '-c', '--config',
@@ -344,6 +347,7 @@ def run():
             parser.print_help()
     except Exception as err:
         logger.error(err)
+        exit(1)
 
 
 if __name__ == "__main__": # pragma: no cover

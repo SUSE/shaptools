@@ -101,9 +101,9 @@ class TestShapCli(object):
         mock_argument_parser.assert_called_once_with(shapcli.PROG)
 
         mock_argument_parser_instance.add_argument.assert_has_calls([
-            mock.call('--verbosity',
+            mock.call('-v', '--verbosity',
                 help='Python logging level. Options: DEBUG, INFO, WARN, ERROR (INFO by default)'),
-            mock.call('--remotely',
+            mock.call('-r', '--remotely',
                 help='Run the command in other machine using ssh'),
             mock.call('-c', '--config',
                 help='JSON configuration file with SAP HANA instance data (sid, instance and password)'),

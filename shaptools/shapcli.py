@@ -50,12 +50,11 @@ def parse_arguments():
     parser = argparse.ArgumentParser(PROG)
 
     parser.add_argument(
-        '--verbosity',
+        '-v', '--verbosity',
         help='Python logging level. Options: DEBUG, INFO, WARN, ERROR (INFO by default)')
     parser.add_argument(
-        '--remotely',
+        '-r', '--remotely',
         help='Run the command in other machine using ssh')
-
     parser.add_argument(
         '-c', '--config',
         help='JSON configuration file with SAP HANA instance data (sid, instance and password)')

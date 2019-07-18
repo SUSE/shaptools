@@ -82,6 +82,26 @@ def format_su_cmd(cmd, user):
     return 'su -lc "{cmd}" {user}'.format(cmd=cmd, user=user)
 
 
+def format_remote_cmd(cmd, remote_host, user):
+    """
+    Fromat cmd to run remotely using ssh
+
+    Args:
+        cmd (str): Command to be executed
+        remote_host (str): User password
+        user (str): User to execute the command
+
+    Returns:
+        str: cmd adapted to be executed remotely
+    """
+    if not user:
+        raise ValueError('user must be provided')
+
+    cmd = 'ssh {user}@{remote_host} "bash --login -c \'{cmd}\'"'.format(
+        user=user, remote_host=remote_host, cmd=cmd)
+    return cmd
+
+
 def create_ssh_askpass(password, cmd):
     """
     Create ask pass command
@@ -98,7 +118,7 @@ def create_ssh_askpass(password, cmd):
     return ssh_askpass_str
 
 
-def execute_cmd(cmd, user=None, password=None):
+def execute_cmd(cmd, user=None, password=None, remote_host=None):
     """
     Execute a shell command. If user and password are provided it will be
     executed with this user.
@@ -107,6 +127,7 @@ def execute_cmd(cmd, user=None, password=None):
         cmd (str): Command to be executed
         user (str, opt): User to execute the command
         password (str, opt): User password
+        remote_host (str, opt): Remote host name where to command will be executed
 
     Returns:
         ProcessResult: ProcessResult instance storing subprocess returncode,
@@ -115,7 +136,11 @@ def execute_cmd(cmd, user=None, password=None):
 
     LOGGER.debug('Executing command "%s" with user %s', cmd, user)
 
-    if user is not None:
+    if remote_host:
+        cmd = format_remote_cmd(cmd, remote_host, user)
+        LOGGER.debug('Command updated to "%s"', cmd)
+
+    elif user:
         cmd = format_su_cmd(cmd, user)
         LOGGER.debug('Command updated to "%s"', cmd)
 

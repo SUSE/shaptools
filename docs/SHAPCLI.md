@@ -49,3 +49,18 @@ Using the `-h` flag in each option will output a new help output. For example:
 ```
 shapcli hana -h
 ```
+
+### Running commands in remote nodes
+
+The commands can be executed in remote nodes too. For that the `-r` or `--remote` flag have to be
+used (or adding the `remote` entry in the configuration file [the `-r` flag has priority over the
+configuration file entry]).
+
+```
+shapcli -c config.json -r remotehost hana version
+```
+
+If the ssh keys of the current node is not installed in the remote host, the password must be
+provided after the command. To avoid this, the ssh key of the current node can be authorized in the
+remote node. By default, the ssh public key must be added in: `/usr/sap/PRD/home/.ssh/authorized_keys`
+(where `PRD` is the SAP HANA instanse sid in uppercase)

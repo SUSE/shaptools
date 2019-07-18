@@ -5,6 +5,10 @@ exposes them as a command line tool.
 
 In order to use the utility the `shaptools` library must be installed (either using `pip` or `rpm` package).
 
+## Disclaimer
+
+This tool will only work if `shaptools` is installed for `python 3` version.
+
 ## Motivation
 
 The major motivation behind this tools is to provide an easy way to run all of the tools provided by

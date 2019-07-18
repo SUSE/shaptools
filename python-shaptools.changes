@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Jul 18 08:46:15 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
+
+- Add the option to run the commands in remote nodes to shapcli 
+
+-------------------------------------------------------------------
 Wed Jul 17 09:34:22 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
 
 - Create package version 0.3.0

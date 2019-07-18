@@ -67,6 +67,6 @@ API to expose SAP HANA functionalities
 %license LICENSE
 %endif
 %{python_sitelib}/*
-%{_bindir}/shapcli
+%python3_only %{_bindir}/shapcli
 
 %changelog

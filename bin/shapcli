@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+"""
+Shaptools command line tool
+"""
+
+from shaptools import shapcli
+
+if __name__ == "__main__":
+    shapcli.run()

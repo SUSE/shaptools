@@ -84,7 +84,7 @@ def format_su_cmd(cmd, user):
 
 def format_remote_cmd(cmd, remote_host, user):
     """
-    Fromat cmd to run remotely using ssh
+    Format cmd to run remotely using ssh
 
     Args:
         cmd (str): Command to be executed
@@ -127,7 +127,7 @@ def execute_cmd(cmd, user=None, password=None, remote_host=None):
         cmd (str): Command to be executed
         user (str, opt): User to execute the command
         password (str, opt): User password
-        remote_host (str, opt): Remote host name where to command will be executed
+        remote_host (str, opt): Remote host where the command will be executed
 
     Returns:
         ProcessResult: ProcessResult instance storing subprocess returncode,

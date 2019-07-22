@@ -63,7 +63,7 @@ class HanaInstance(object):
         sid (str): SAP HANA sid to enable
         inst (str): SAP HANA instance number
         password (str): HANA instance password
-        remote_host (str, optional): Remote host name where the commands will be executed
+        remote_host (str, opt): Remote host where the command will be executed
     """
 
     PATH = '/usr/sap/{sid}/HDB{inst}/'
@@ -156,7 +156,7 @@ class HanaInstance(object):
             conf_file (str): Path where configuration file will be created
             root_user (str): Root user name
             root_password (str): Root user password
-            remote_host (str, opt): Remote host name where to command will be executed
+            remote_host (str, opt): Remote host where the command will be executed
 
         """
         executable = cls.INSTALL_EXEC.format(software_path=software_path)
@@ -178,7 +178,7 @@ class HanaInstance(object):
             conf_file (str): Path to the configuration file
             root_user (str): Root user name
             password (str): Root user password
-            remote_host (str, opt): Remote host name where to command will be executed
+            remote_host (str, opt): Remote host where the command will be executed
         """
         # TODO: mount partition if needed
         # TODO: do some integrity check stuff

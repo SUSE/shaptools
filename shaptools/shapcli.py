@@ -337,6 +337,7 @@ def run():
     parser, args = parse_arguments()
     logger = setup_logger(args.verbosity or logging.DEBUG)
 
+    # If -c or --config flag is received data is loaded from the configuration file
     if args.config:
         data = load_config_file(args.config, logger)
         config_data = ConfigData(data, logger)

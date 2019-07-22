@@ -53,8 +53,7 @@ shapcli hana -h
 ### Running commands in remote nodes
 
 The commands can be executed in remote nodes too. For that the `-r` or `--remote` flag have to be
-used (or adding the `remote` entry in the configuration file [the `-r` flag has priority over the
-configuration file entry]).
+used (or adding the `remote` entry in the configuration file [the `-r` flag has priority over the configuration file entry]).
 
 ```
 shapcli -c config.json -r remotehost hana version

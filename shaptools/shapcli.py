@@ -30,6 +30,23 @@ class DecodedFormatter(logging.Formatter):
         return message
 
 
+class ConfigData(object):
+    """
+    Class to store the required configuration data
+    """
+
+    def __init__(self, data_dict, logger):
+        try:
+            self.sid = data_dict['sid']
+            self.instance = data_dict['instance']
+            self.password = data_dict['password']
+            self.remote = data_dict.get('remote', None)
+        except KeyError as err:
+            logger.error(err)
+            logger.error('Configuration file must have the sid, instance and password entries')
+            raise
+
+
 def setup_logger(level):
     """
     Setup logging
@@ -53,7 +70,7 @@ def parse_arguments():
         '-v', '--verbosity',
         help='Python logging level. Options: DEBUG, INFO, WARN, ERROR (INFO by default)')
     parser.add_argument(
-        '-r', '--remotely',
+        '-r', '--remote',
         help='Run the command in other machine using ssh')
     parser.add_argument(
         '-c', '--config',
@@ -284,7 +301,7 @@ def run_sr_subcommands(hana_instance, sr_args, logger):
         # hana_instance.get_sr_status()
         cmd = 'HDBSettings.sh systemReplicationStatus.py{}'.format(
             ' --sapcontrol=1' if sr_args.sapcontrol else '')
-        hana_instance._run_hana_command(cmd)
+        hana_instance._run_hana_command(cmd, exception=False)
     elif str_args == 'disable':
         hana_instance.sr_disable_primary()
     elif str_args == 'cleanup':
@@ -309,12 +326,7 @@ def load_config_file(config_file, logger):
     """
     with open(config_file, 'r') as f_ptr:
         json_data = json.load(f_ptr)
-    try:
-        return (json_data['sid'], json_data['instance'], json_data['password'])
-    except KeyError as err:
-        logger.error(err)
-        logger.error('Configuration file must have the sid, instance and password entries')
-        raise
+    return json_data
 
 
 # pylint:disable=W0212
@@ -325,19 +337,25 @@ def run():
     parser, args = parse_arguments()
     logger = setup_logger(args.verbosity or logging.DEBUG)
 
+    # If -c or --config flag is received data is loaded from the configuration file
     if args.config:
-        sid, instance, password = load_config_file(args.config, logger)
+        data = load_config_file(args.config, logger)
+        config_data = ConfigData(data, logger)
     elif args.sid and args.instance and args.password:
-        sid = args.sid
-        instance = args.instance
-        password = args.password
+        config_data = ConfigData(vars(args), logger)
     else:
         logger.info(
-            'Configuration file or sid,instance and passwords parameters must be provided\n')
+            'Configuration file or sid, instance and passwords parameters must be provided\n')
         parser.print_help()
         exit(1)
+
+    if args.remote:
+        config_data.remote = args.remote
+
     try:
-        hana_instance = hana.HanaInstance(sid, instance, password)
+        hana_instance = hana.HanaInstance(
+            config_data.sid, config_data.instance,
+            config_data.password, remote_host=config_data.remote)
         if vars(args).get('hana'):
             run_hana_subcommands(hana_instance, args, logger)
         elif vars(args).get('sr'):

@@ -106,6 +106,19 @@ class TestShell(unittest.TestCase):
         cmd = shell.format_su_cmd('hdbnsutil -sr_enable --name=PRAGUE', 'prdadm')
         self.assertEqual('su -lc "hdbnsutil -sr_enable --name=PRAGUE" prdadm', cmd)
 
+    def test_format_remote_cmd(self):
+        cmd = shell.format_remote_cmd('ls -la', 'remote', 'test')
+        self.assertEqual('ssh test@remote "bash --login -c \'ls -la\'"', cmd)
+
+        cmd = shell.format_remote_cmd('hdbnsutil -sr_enable --name=PRAGUE', 'remote', 'prdadm')
+        self.assertEqual(
+            'ssh prdadm@remote "bash --login -c \'hdbnsutil -sr_enable --name=PRAGUE\'"', cmd)
+
+    def test_format_remote_cmd_error(self):
+        with self.assertRaises(ValueError) as err:
+            shell.format_remote_cmd('ls -la', 'remote', None)
+        self.assertTrue('user must be provided' in str(err.exception))
+
     def test_execute_cmd_popen(self):
         # This test is used to check popen correct usage
         result = shell.execute_cmd('ls -la')
@@ -136,6 +149,42 @@ class TestShell(unittest.TestCase):
         mock_popen_inst.communicate.assert_called_once_with(input=None)
 
         mock_process.assert_called_once_with('ls -la', 5, b'out', b'err')
+
+        self.assertEqual(mock_process_inst, result)
+
+    @mock.patch('shaptools.shell.format_remote_cmd')
+    @mock.patch('shaptools.shell.ProcessResult')
+    @mock.patch('subprocess.Popen')
+    @mock.patch('logging.Logger.debug')
+    def test_execute_cmd_remote(
+            self, logger, mock_popen, mock_process, mock_format):
+
+        mock_format.return_value = 'updated command'
+
+        mock_popen_inst = mock.Mock()
+        mock_popen_inst.returncode = 5
+        mock_popen_inst.communicate.return_value = (b'out', b'err')
+        mock_popen.return_value = mock_popen_inst
+
+        mock_process_inst = mock.Mock()
+        mock_process.return_value = mock_process_inst
+
+        result = shell.execute_cmd('ls -la', 'test', 'pass', 'remote')
+
+        logger.assert_has_calls([
+            mock.call('Executing command "%s" with user %s', 'ls -la', 'test'),
+            mock.call('Command updated to "%s"', 'updated command')
+        ])
+
+        mock_format.assert_called_once_with('ls -la', 'remote', 'test')
+
+        mock_popen.assert_called_once_with(
+            ['updated', 'command'], stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+
+        mock_popen_inst.communicate.assert_called_once_with(input=b'pass')
+
+        mock_process.assert_called_once_with('updated command', 5, b'out', b'err')
 
         self.assertEqual(mock_process_inst, result)
 

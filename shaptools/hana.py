@@ -55,7 +55,7 @@ SR_STATUS = {
 }
 
 
-class HanaInstance:
+class HanaInstance(object):
     """
     SAP HANA instance implementation
 
@@ -63,6 +63,7 @@ class HanaInstance:
         sid (str): SAP HANA sid to enable
         inst (str): SAP HANA instance number
         password (str): HANA instance password
+        remote_host (str, opt): Remote host where the command will be executed
     """
 
     PATH = '/usr/sap/{sid}/HDB{inst}/'
@@ -73,7 +74,7 @@ class HanaInstance:
     SUCCESSFULLY_REGISTERED = 0 # Node correctly registered as secondary node
     SSFS_DIFFERENT_ERROR = 149 # ssfs files are different in the two nodes error return code
 
-    def __init__(self, sid, inst, password):
+    def __init__(self, sid, inst, password, **kwargs):
         # Force instance nr always with 2 positions.
         inst = '{:0>2}'.format(inst)
         if not all(isinstance(i, basestring) for i in [sid, inst, password]):
@@ -84,6 +85,7 @@ class HanaInstance:
         self.sid = sid
         self.inst = inst
         self._password = password
+        self.remote_host = kwargs.get('remote_host', None)
 
     def _run_hana_command(self, cmd, exception=True):
         """
@@ -99,7 +101,7 @@ class HanaInstance:
         """
         #TODO: Add absolute paths to hana commands using sid and inst number
         user = self.HANAUSER.format(sid=self.sid)
-        result = shell.execute_cmd(cmd, user, self._password)
+        result = shell.execute_cmd(cmd, user, self._password, self.remote_host)
 
         if exception and result.returncode != 0:
             raise HanaError('Error running hana command: {}'.format(result.cmd))
@@ -115,7 +117,7 @@ class HanaInstance:
         """
         user = self.HANAUSER.format(sid=self.sid)
         try:
-            result = shell.execute_cmd('HDB info', user, self._password)
+            result = shell.execute_cmd('HDB info', user, self._password, self.remote_host)
             return not result.returncode
         except EnvironmentError as err: #FileNotFoundError is not compatible with python2
             self._logger.error(err)
@@ -145,7 +147,7 @@ class HanaInstance:
 
     @classmethod
     def create_conf_file(
-            cls, software_path, conf_file, root_user, root_password):
+            cls, software_path, conf_file, root_user, root_password, remote_host=None):
         """
         Create SAP HANA configuration file
 
@@ -154,18 +156,20 @@ class HanaInstance:
             conf_file (str): Path where configuration file will be created
             root_user (str): Root user name
             root_password (str): Root user password
+            remote_host (str, opt): Remote host where the command will be executed
+
         """
         executable = cls.INSTALL_EXEC.format(software_path=software_path)
         cmd = '{executable} --action=install '\
             '--dump_configfile_template={conf_file}'.format(
                 executable=executable, conf_file=conf_file)
-        result = shell.execute_cmd(cmd, root_user, root_password)
+        result = shell.execute_cmd(cmd, root_user, root_password, remote_host)
         if result.returncode:
             raise HanaError('SAP HANA configuration file creation failed')
         return conf_file
 
     @classmethod
-    def install(cls, software_path, conf_file, root_user, password):
+    def install(cls, software_path, conf_file, root_user, password, remote_host=None):
         """
         Install SAP HANA platform providing a configuration file
 
@@ -174,13 +178,14 @@ class HanaInstance:
             conf_file (str): Path to the configuration file
             root_user (str): Root user name
             password (str): Root user password
+            remote_host (str, opt): Remote host where the command will be executed
         """
         # TODO: mount partition if needed
         # TODO: do some integrity check stuff
         executable = cls.INSTALL_EXEC.format(software_path=software_path)
         cmd = '{executable} -b --configfile={conf_file}'.format(
             executable=executable, conf_file=conf_file)
-        result = shell.execute_cmd(cmd, root_user, password)
+        result = shell.execute_cmd(cmd, root_user, password, remote_host)
         if result.returncode:
             raise HanaError('SAP HANA installation failed')
 
@@ -191,7 +196,7 @@ class HanaInstance:
         cmd = '{installation_folder}/{sid}/hdblcm/hdblcm '\
             '--uninstall -b'.format(
                 installation_folder=installation_folder, sid=self.sid.upper())
-        result = shell.execute_cmd(cmd, root_user, password)
+        result = shell.execute_cmd(cmd, root_user, password, self.remote_host)
         if result.returncode:
             raise HanaError('SAP HANA uninstallation failed')
 
@@ -204,7 +209,7 @@ class HanaInstance:
         """
         cmd = 'pidof hdb.sap{sid}_HDB{inst}'.format(
             sid=self.sid.upper(), inst=self.inst)
-        result = shell.execute_cmd(cmd)
+        result = self._run_hana_command(cmd, exception=False)
         return not result.returncode
 
     # pylint:disable=W1401

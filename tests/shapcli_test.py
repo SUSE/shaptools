@@ -79,6 +79,34 @@ class TestShapCli(object):
 
         assert logger == mock_logger_instance
 
+    @mock.patch('shaptools.shapcli.json.load')
+    @mock.patch('shaptools.shapcli.open')
+    def test_config_data(self, mock_open, mock_json_load):
+
+        mock_logger = mock.Mock()
+
+        data = shapcli.ConfigData({'sid': 'prd', 'instance': '00', 'password': 'pass'}, mock_logger)
+
+        assert data.sid == 'prd'
+        assert data.instance == '00'
+        assert data.password == 'pass'
+        assert data.remote == None
+
+        data = shapcli.ConfigData(
+            {'sid': 'prd', 'instance': '00', 'password': 'pass', 'remote': 'host'}, mock_logger)
+
+        assert data.sid == 'prd'
+        assert data.instance == '00'
+        assert data.password == 'pass'
+        assert data.remote == 'host'
+
+        with pytest.raises(KeyError) as err:
+            shapcli.ConfigData({'sid': 'prd', 'instance': '00'}, mock_logger)
+
+        mock_logger.error.assert_has_calls([
+            mock.call('Configuration file must have the sid, instance and password entries')
+        ])
+
     @mock.patch('argparse.ArgumentParser')
     @mock.patch('shaptools.shapcli.parse_hana_arguments')
     @mock.patch('shaptools.shapcli.parse_sr_arguments')
@@ -103,7 +131,7 @@ class TestShapCli(object):
         mock_argument_parser_instance.add_argument.assert_has_calls([
             mock.call('-v', '--verbosity',
                 help='Python logging level. Options: DEBUG, INFO, WARN, ERROR (INFO by default)'),
-            mock.call('-r', '--remotely',
+            mock.call('-r', '--remote',
                 help='Run the command in other machine using ssh'),
             mock.call('-c', '--config',
                 help='JSON configuration file with SAP HANA instance data (sid, instance and password)'),
@@ -410,13 +438,13 @@ class TestShapCli(object):
         mock_hana_args = mock.Mock(sr='status', sapcontrol=True)
         shapcli.run_sr_subcommands(mock_hana_instance, mock_hana_args, mock_logger)
         cmd = 'HDBSettings.sh systemReplicationStatus.py --sapcontrol=1'
-        mock_hana_instance._run_hana_command.assert_called_once_with(cmd)
+        mock_hana_instance._run_hana_command.assert_called_once_with(cmd, exception=False)
         mock_hana_instance.reset_mock()
 
         mock_hana_args = mock.Mock(sr='status', sapcontrol=False)
         shapcli.run_sr_subcommands(mock_hana_instance, mock_hana_args, mock_logger)
         cmd = 'HDBSettings.sh systemReplicationStatus.py'
-        mock_hana_instance._run_hana_command.assert_called_once_with(cmd)
+        mock_hana_instance._run_hana_command.assert_called_once_with(cmd, exception=False)
         mock_hana_instance.reset_mock()
 
         mock_hana_args = mock.Mock(sr='disable')
@@ -467,23 +495,7 @@ class TestShapCli(object):
         mock_json_load.return_value = {'sid': 'prd', 'instance': '00', 'password': 'pass'}
 
         data = shapcli.load_config_file('config.json', mock_logger)
-        assert data[0] == 'prd'
-        assert data[1] == '00'
-        assert data[2] == 'pass'
-
-    @mock.patch('shaptools.shapcli.json.load')
-    @mock.patch('shaptools.shapcli.open')
-    def test_load_config_file_error(self, mock_open, mock_json_load):
-
-        mock_logger = mock.Mock()
-        mock_json_load.return_value = {'sid': 'prd', 'instance': '00'}
-
-        with pytest.raises(KeyError) as err:
-            shapcli.load_config_file('config.json', mock_logger)
-
-        mock_logger.error.assert_has_calls([
-            mock.call('Configuration file must have the sid, instance and password entries')
-        ])
+        assert data == {'sid': 'prd', 'instance': '00', 'password': 'pass'}
 
     @mock.patch('shaptools.shapcli.run_hana_subcommands')
     @mock.patch('shaptools.shapcli.hana.HanaInstance')
@@ -496,12 +508,13 @@ class TestShapCli(object):
             mock_run_hana_subcommands):
 
         mock_parser = mock.Mock()
-        mock_args = mock.Mock(verbosity='INFO', config='config.json', hana=True)
+        mock_args = mock.Mock(verbosity='INFO', config='config.json', hana=True, remote=None)
         mock_logger = mock.Mock()
         mock_hana_instance = mock.Mock()
         mock_parse_arguments.return_value = [mock_parser, mock_args]
         mock_setup_logger.return_value = mock_logger
-        mock_load_config_file.return_value = ['prd', '00', 'pass']
+        mock_load_config_file.return_value = {
+            'sid': 'prd', 'instance': '00', 'password': 'pass', 'remote': 'host'}
         mock_hana.return_value = mock_hana_instance
 
         shapcli.run()
@@ -509,7 +522,7 @@ class TestShapCli(object):
         mock_parse_arguments.assert_called_once_with()
         mock_setup_logger.assert_called_once_with('INFO')
         mock_load_config_file.assert_called_once_with('config.json', mock_logger)
-        mock_hana.assert_called_once_with('prd', '00', 'pass')
+        mock_hana.assert_called_once_with('prd', '00', 'pass', remote_host='host')
         mock_run_hana_subcommands.assert_called_once_with(mock_hana_instance, mock_args, mock_logger)
 
     @mock.patch('shaptools.shapcli.run_sr_subcommands')
@@ -522,7 +535,8 @@ class TestShapCli(object):
 
         mock_parser = mock.Mock()
         mock_args = mock.Mock(
-            verbosity='INFO', config=False, sid='qas', instance='01', password='mypass', sr=True)
+            verbosity='INFO', config=False, sid='qas', instance='01', password='mypass',
+            remote='remote', sr=True)
         mock_logger = mock.Mock()
         mock_hana_instance = mock.Mock()
         mock_parse_arguments.return_value = [mock_parser, mock_args]
@@ -533,7 +547,7 @@ class TestShapCli(object):
 
         mock_parse_arguments.assert_called_once_with()
         mock_setup_logger.assert_called_once_with('INFO')
-        mock_hana.assert_called_once_with('qas', '01', 'mypass')
+        mock_hana.assert_called_once_with('qas', '01', 'mypass', remote_host='remote')
         mock_run_sr_subcommands.assert_called_once_with(mock_hana_instance, mock_args, mock_logger)
 
     @mock.patch('shaptools.shapcli.hana.HanaInstance')
@@ -544,7 +558,7 @@ class TestShapCli(object):
 
         mock_parser = mock.Mock()
         mock_args = mock.Mock(
-            verbosity='INFO', config=False, sid='qas', instance='01', password='mypass')
+            verbosity='INFO', config=False, sid='qas', instance='01', password='mypass', remote=None)
         mock_logger = mock.Mock()
         mock_hana_instance = mock.Mock()
         mock_parse_arguments.return_value = [mock_parser, mock_args]
@@ -555,7 +569,7 @@ class TestShapCli(object):
 
         mock_parse_arguments.assert_called_once_with()
         mock_setup_logger.assert_called_once_with('INFO')
-        mock_hana.assert_called_once_with('qas', '01', 'mypass')
+        mock_hana.assert_called_once_with('qas', '01', 'mypass', remote_host=None)
         mock_parser.print_help.assert_called_once_with()
 
 
@@ -580,7 +594,7 @@ class TestShapCli(object):
         mock_parse_arguments.assert_called_once_with()
         mock_setup_logger.assert_called_once_with(logging.DEBUG)
         mock_logger.info.assert_called_once_with(
-            'Configuration file or sid,instance and passwords parameters must be provided\n')
+            'Configuration file or sid, instance and passwords parameters must be provided\n')
         mock_parser.print_help.assert_called_once_with()
 
     @mock.patch('shaptools.shapcli.run_sr_subcommands')
@@ -593,7 +607,8 @@ class TestShapCli(object):
 
         mock_parser = mock.Mock()
         mock_args = mock.Mock(
-            verbosity='INFO', config=False, sid='qas', instance='01', password='mypass', sr=True)
+            verbosity='INFO', config=False, sid='qas', instance='01',
+            password='mypass', sr=True, remote=None)
         mock_logger = mock.Mock()
         mock_hana_instance = mock.Mock()
         mock_parse_arguments.return_value = [mock_parser, mock_args]
@@ -609,5 +624,5 @@ class TestShapCli(object):
 
         mock_parse_arguments.assert_called_once_with()
         mock_setup_logger.assert_called_once_with('INFO')
-        mock_hana.assert_called_once_with('qas', '01', 'mypass')
+        mock_hana.assert_called_once_with('qas', '01', 'mypass', remote_host=None)
         mock_run_sr_subcommands.assert_called_once_with(mock_hana_instance, mock_args, mock_logger)

@@ -1,8 +1,19 @@
 -------------------------------------------------------------------
-Mon Jul  8 14:45:21 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
+Tue Jul 23 11:04:25 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
 
-- Create package version 0.2.2.
+- Create package version 0.3.1
 - Add support for Power machines 
+
+-------------------------------------------------------------------
+Thu Jul 18 08:46:15 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
+
+- Add an option to run the commands in remote nodes to shapcli
+
+-------------------------------------------------------------------
+Wed Jul 17 09:34:22 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
+
+- Create package version 0.3.0
+- shapcli is provided to expose shaptools api methods as command line tool
 
 -------------------------------------------------------------------
 Tue Jun 11 11:29:44 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>

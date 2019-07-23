@@ -40,7 +40,7 @@ CLASSIFIERS = [
 
 ]
 
-SCRIPTS = []
+SCRIPTS = ['bin/shapcli']
 
 DEPENDENCIES = read('requirements.txt').split()
 

@@ -108,7 +108,7 @@ class TestHana(unittest.TestCase):
 
         result = self._hana._run_hana_command('test command')
 
-        mock_execute.assert_called_once_with('test command', 'prdadm', 'pass')
+        mock_execute.assert_called_once_with('test command', 'prdadm', 'pass', None)
         self.assertEqual(proc_mock, result)
 
     @mock.patch('shaptools.shell.execute_cmd')
@@ -121,7 +121,7 @@ class TestHana(unittest.TestCase):
         with self.assertRaises(hana.HanaError) as err:
             self._hana._run_hana_command('test command')
 
-        mock_execute.assert_called_once_with('test command', 'prdadm', 'pass')
+        mock_execute.assert_called_once_with('test command', 'prdadm', 'pass', None)
         self.assertTrue(
             'Error running hana command: {}'.format(
                 'updated command') in str(err.exception))
@@ -134,7 +134,7 @@ class TestHana(unittest.TestCase):
 
         result = self._hana.is_installed()
 
-        mock_execute.assert_called_once_with('HDB info', 'prdadm', 'pass')
+        mock_execute.assert_called_once_with('HDB info', 'prdadm', 'pass', None)
 
         self.assertTrue(result)
 
@@ -146,7 +146,7 @@ class TestHana(unittest.TestCase):
 
         result = self._hana.is_installed()
 
-        mock_execute.assert_called_once_with('HDB info', 'prdadm', 'pass')
+        mock_execute.assert_called_once_with('HDB info', 'prdadm', 'pass', None)
 
         self.assertFalse(result)
 
@@ -160,7 +160,7 @@ class TestHana(unittest.TestCase):
 
         result = self._hana.is_installed()
 
-        mock_execute.assert_called_once_with('HDB info', 'prdadm', 'pass')
+        mock_execute.assert_called_once_with('HDB info', 'prdadm', 'pass', None)
 
         self.assertFalse(result)
         logger.assert_called_once_with(error)
@@ -193,10 +193,8 @@ class TestHana(unittest.TestCase):
         mock_execute.assert_called_once_with(
             'software_path/DATA_UNITS/HDB_LCM_LINUX_my_arch/hdblcm '
             '--action=install --dump_configfile_template={conf_file}'.format(
-                conf_file='conf_file.conf'), 'root', 'pass')
-
+                conf_file='conf_file.conf'), 'root', 'pass', None)
         mock_get_platform.assert_called_once_with()
-
         self.assertEqual('conf_file.conf', conf_file)
 
     @mock.patch('shaptools.hana.HanaInstance.get_platform')
@@ -214,7 +212,7 @@ class TestHana(unittest.TestCase):
         mock_execute.assert_called_once_with(
             'software_path/DATA_UNITS/HDB_LCM_LINUX_my_arch/hdblcm '
             '--action=install --dump_configfile_template={conf_file}'.format(
-                conf_file='conf_file.conf'), 'root', 'pass')
+                conf_file='conf_file.conf'), 'root', 'pass', None)
 
         mock_get_platform.assert_called_once_with()
 
@@ -235,7 +233,7 @@ class TestHana(unittest.TestCase):
         mock_execute.assert_called_once_with(
             'software_path/DATA_UNITS/HDB_LCM_LINUX_my_arch/hdblcm '
             '-b --configfile={conf_file}'.format(
-                conf_file='conf_file.conf'), 'root', 'pass')
+                conf_file='conf_file.conf'), 'root', 'pass', None)
         mock_get_platform.assert_called_once_with()
 
     @mock.patch('shaptools.hana.HanaInstance.get_platform')
@@ -253,7 +251,7 @@ class TestHana(unittest.TestCase):
         mock_execute.assert_called_once_with(
             'software_path/DATA_UNITS/HDB_LCM_LINUX_my_arch/hdblcm '
             '-b --configfile={conf_file}'.format(
-                conf_file='conf_file.conf'), 'root', 'pass')
+                conf_file='conf_file.conf'), 'root', 'pass', None)
         mock_get_platform.assert_called_once_with()
 
         self.assertTrue(
@@ -268,7 +266,7 @@ class TestHana(unittest.TestCase):
         self._hana.uninstall('root', 'pass')
 
         mock_execute.assert_called_once_with(
-            '/hana/shared/PRD/hdblcm/hdblcm --uninstall -b', 'root', 'pass')
+            '/hana/shared/PRD/hdblcm/hdblcm --uninstall -b', 'root', 'pass', None)
 
     @mock.patch('shaptools.shell.execute_cmd')
     def test_uninstall_error(self, mock_execute):
@@ -280,20 +278,19 @@ class TestHana(unittest.TestCase):
             self._hana.uninstall('root', 'pass', 'path')
 
         mock_execute.assert_called_once_with(
-            'path/PRD/hdblcm/hdblcm --uninstall -b', 'root', 'pass')
+            'path/PRD/hdblcm/hdblcm --uninstall -b', 'root', 'pass', None)
 
         self.assertTrue(
             'SAP HANA uninstallation failed' in str(err.exception))
 
     @mock.patch('shaptools.shell.execute_cmd')
     def test_is_running(self, mock_execute):
-        proc_mock = mock.Mock()
-        proc_mock.returncode = 0
-        mock_execute.return_value = proc_mock
-
+        mock_command = mock.Mock()
+        self._hana._run_hana_command = mock_command
+        mock_result = mock.Mock(returncode=0)
+        self._hana._run_hana_command.return_value = mock_result
         result = self._hana.is_running()
-
-        mock_execute.assert_called_once_with('pidof hdb.sapPRD_HDB00')
+        mock_command.assert_called_once_with('pidof hdb.sapPRD_HDB00', exception=False)
         self.assertTrue(result)
 
     @mock.patch('subprocess.Popen')

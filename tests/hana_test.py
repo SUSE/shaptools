@@ -78,6 +78,26 @@ class TestHana(unittest.TestCase):
             'provided sid, inst and password parameters must be str type' in
             str(err.exception))
 
+    @mock.patch('platform.machine')
+    def test_get_platform(self, mock_machine):
+        mock_machine.return_value = 'x86_64'
+        machine = hana.HanaInstance.get_platform()
+        self.assertEqual(machine, 'X86_64')
+        mock_machine.assert_called_once_with()
+
+        mock_machine.reset_mock()
+        mock_machine.return_value = 'ppc64le'
+        machine = hana.HanaInstance.get_platform()
+        self.assertEqual(machine, 'PPC64LE')
+        mock_machine.assert_called_once_with()
+
+    @mock.patch('platform.machine')
+    def test_get_platform_error(self, mock_machine):
+        mock_machine.return_value = 'ppc64'
+        with self.assertRaises(ValueError) as err:
+            hana.HanaInstance.get_platform()
+        self.assertTrue('not supported platform: {}'.format('ppc64') in str(err.exception))
+        mock_machine.assert_called_once_with()
 
     @mock.patch('shaptools.shell.execute_cmd')
     def test_run_hana_command(self, mock_execute):
@@ -159,67 +179,80 @@ class TestHana(unittest.TestCase):
             **{'sid': 'PRD', 'password': 'Qwerty1234', 'system_user_password': 'Qwerty1234'})
         self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf', conf_file))
 
+    @mock.patch('shaptools.hana.HanaInstance.get_platform')
     @mock.patch('shaptools.shell.execute_cmd')
-    def test_create_conf_file(self, mock_execute):
+    def test_create_conf_file(self, mock_execute, mock_get_platform):
         proc_mock = mock.Mock()
         proc_mock.returncode = 0
         mock_execute.return_value = proc_mock
+        mock_get_platform.return_value = 'my_arch'
 
         conf_file = hana.HanaInstance.create_conf_file(
             'software_path', 'conf_file.conf', 'root', 'pass')
 
         mock_execute.assert_called_once_with(
-            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_my_arch/hdblcm '
             '--action=install --dump_configfile_template={conf_file}'.format(
                 conf_file='conf_file.conf'), 'root', 'pass', None)
+        mock_get_platform.assert_called_once_with()
         self.assertEqual('conf_file.conf', conf_file)
 
+    @mock.patch('shaptools.hana.HanaInstance.get_platform')
     @mock.patch('shaptools.shell.execute_cmd')
-    def test_create_conf_file_error(self, mock_execute):
+    def test_create_conf_file_error(self, mock_execute, mock_get_platform):
         proc_mock = mock.Mock()
         proc_mock.returncode = 1
         mock_execute.return_value = proc_mock
+        mock_get_platform.return_value = 'my_arch'
 
         with self.assertRaises(hana.HanaError) as err:
             hana.HanaInstance.create_conf_file(
                 'software_path', 'conf_file.conf', 'root', 'pass')
 
         mock_execute.assert_called_once_with(
-            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_my_arch/hdblcm '
             '--action=install --dump_configfile_template={conf_file}'.format(
                 conf_file='conf_file.conf'), 'root', 'pass', None)
+
+        mock_get_platform.assert_called_once_with()
 
         self.assertTrue(
             'SAP HANA configuration file creation failed' in str(err.exception))
 
+    @mock.patch('shaptools.hana.HanaInstance.get_platform')
     @mock.patch('shaptools.shell.execute_cmd')
-    def test_install(self, mock_execute):
+    def test_install(self, mock_execute, mock_get_platform):
         proc_mock = mock.Mock()
         proc_mock.returncode = 0
         mock_execute.return_value = proc_mock
+        mock_get_platform.return_value = 'my_arch'
 
         hana.HanaInstance.install(
             'software_path', 'conf_file.conf', 'root', 'pass')
 
         mock_execute.assert_called_once_with(
-            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_my_arch/hdblcm '
             '-b --configfile={conf_file}'.format(
                 conf_file='conf_file.conf'), 'root', 'pass', None)
+        mock_get_platform.assert_called_once_with()
 
+    @mock.patch('shaptools.hana.HanaInstance.get_platform')
     @mock.patch('shaptools.shell.execute_cmd')
-    def test_install_error(self, mock_execute):
+    def test_install_error(self, mock_execute, mock_get_platform):
         proc_mock = mock.Mock()
         proc_mock.returncode = 1
         mock_execute.return_value = proc_mock
+        mock_get_platform.return_value = 'my_arch'
 
         with self.assertRaises(hana.HanaError) as err:
             hana.HanaInstance.install(
                 'software_path', 'conf_file.conf', 'root', 'pass')
 
         mock_execute.assert_called_once_with(
-            'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm '
+            'software_path/DATA_UNITS/HDB_LCM_LINUX_my_arch/hdblcm '
             '-b --configfile={conf_file}'.format(
                 conf_file='conf_file.conf'), 'root', 'pass', None)
+        mock_get_platform.assert_called_once_with()
 
         self.assertTrue(
             'SAP HANA installation failed' in str(err.exception))

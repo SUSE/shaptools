@@ -18,6 +18,7 @@ import logging
 import fileinput
 import re
 import time
+import platform
 
 from shaptools import shell
 
@@ -67,7 +68,10 @@ class HanaInstance(object):
     """
 
     PATH = '/usr/sap/{sid}/HDB{inst}/'
-    INSTALL_EXEC = '{software_path}/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm'
+    INSTALL_EXEC = '{software_path}/DATA_UNITS/HDB_LCM_LINUX_{platform}/hdblcm'
+    SUPPORTED_PLATFORMS = [
+        'x86_64', 'ppc64le'
+    ]
     # SID is usualy written uppercased, but the OS user is always created lower case.
     HANAUSER = '{sid}adm'.lower()
     SYNCMODES = ['sync', 'syncmem', 'async']
@@ -86,6 +90,18 @@ class HanaInstance(object):
         self.inst = inst
         self._password = password
         self.remote_host = kwargs.get('remote_host', None)
+
+    @classmethod
+    def get_platform(cls):
+        """
+        Get the SAP HANA installation folder by platform
+        """
+        current_platform = platform.machine()
+        logger = logging.getLogger('__name__')
+        logger.info('current platform is %s', current_platform)
+        if current_platform not in cls.SUPPORTED_PLATFORMS:
+            raise ValueError('not supported platform: {}'.format(current_platform))
+        return current_platform.upper()
 
     def _run_hana_command(self, cmd, exception=True):
         """
@@ -159,7 +175,8 @@ class HanaInstance(object):
             remote_host (str, opt): Remote host where the command will be executed
 
         """
-        executable = cls.INSTALL_EXEC.format(software_path=software_path)
+        platform_folder = cls.get_platform()
+        executable = cls.INSTALL_EXEC.format(software_path=software_path, platform=platform_folder)
         cmd = '{executable} --action=install '\
             '--dump_configfile_template={conf_file}'.format(
                 executable=executable, conf_file=conf_file)
@@ -182,7 +199,8 @@ class HanaInstance(object):
         """
         # TODO: mount partition if needed
         # TODO: do some integrity check stuff
-        executable = cls.INSTALL_EXEC.format(software_path=software_path)
+        platform_folder = cls.get_platform()
+        executable = cls.INSTALL_EXEC.format(software_path=software_path, platform=platform_folder)
         cmd = '{executable} -b --configfile={conf_file}'.format(
             executable=executable, conf_file=conf_file)
         result = shell.execute_cmd(cmd, root_user, password, remote_host)
@@ -596,10 +614,11 @@ class HanaInstance(object):
         user_name = kwargs.get('user_name', None)
         user_password = kwargs.get('user_password', None)
 
-        self._manage_ini_file(parameter_str=parameter_str, database=database,
-                              file_name=file_name, layer=layer, layer_name=layer_name,
-                              set_value=True, reconfig=reconfig, key_name=key_name,
-                              user_name=user_name, user_password=user_password)
+        self._manage_ini_file(
+            parameter_str=parameter_str, database=database,
+            file_name=file_name, layer=layer, layer_name=layer_name,
+            set_value=True, reconfig=reconfig, key_name=key_name,
+            user_name=user_name, user_password=user_password)
 
     def unset_ini_parameter(
             self, ini_parameter_names, database, file_name, layer,
@@ -636,7 +655,8 @@ class HanaInstance(object):
         user_name = kwargs.get('user_name', None)
         user_password = kwargs.get('user_password', None)
 
-        self._manage_ini_file(parameter_str=parameter_str, database=database,
-                              file_name=file_name, layer=layer, layer_name=layer_name,
-                              set_value=False, reconfig=reconfig, key_name=key_name,
-                              user_name=user_name, user_password=user_password)
+        self._manage_ini_file(
+            parameter_str=parameter_str, database=database,
+            file_name=file_name, layer=layer, layer_name=layer_name,
+            set_value=False, reconfig=reconfig, key_name=key_name,
+            user_name=user_name, user_password=user_password)

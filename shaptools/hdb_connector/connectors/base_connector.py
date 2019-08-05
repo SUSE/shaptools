@@ -11,12 +11,6 @@ Base connector
 import logging
 
 
-class BaseError(Exception):
-    """
-    Base exception
-    """
-
-
 class DriverNotAvailableError(Exception):
     """
     dbapi nor pyhdb are installed
@@ -29,7 +23,7 @@ class ConnectionError(Exception):
     """
 
 
-class QueryError(BaseError):
+class QueryError(Exception):
     """
     Error during query
     """

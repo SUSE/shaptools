@@ -18,6 +18,12 @@ LOGGER = logging.getLogger('shell')
 ASKPASS_SCRIPT = 'support/ssh_askpass'
 
 
+class ShellError(Exception):
+    """
+    Exceptions in shell module
+    """
+
+
 class ProcessResult:
     """
     Class to store subprocess.Popen output information and offer some
@@ -157,3 +163,26 @@ def execute_cmd(cmd, user=None, password=None, remote_host=None):
     log_command_results(out, err)
 
     return result
+
+def remove_user(user, force=False, root_user=None, root_password=None):
+    """
+    Remove user from system
+    Args:
+        user (str): User to remove
+        force (bool): Force the remove process even though the user is used in some process
+    """
+    cmd = 'userdel {}'.format(user)
+    process_executing = r'userdel: user {} is currently used by process (.*)'.format(user)
+    while True:
+        result = execute_cmd(cmd, root_user, root_password)
+        if result.returncode == 0:
+            return
+        elif force:
+            process_pid = find_pattern(process_executing, result.err)
+            if not process_pid:
+                break
+            kill_cmd = 'kill -9 {}'.format(process_pid.group(1))
+            execute_cmd(kill_cmd, root_user, root_password)
+        else:
+            break
+    raise ShellError('error removing user {}'.format(user))

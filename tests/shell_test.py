@@ -225,7 +225,6 @@ class TestShell(unittest.TestCase):
     @mock.patch('os.path')
     def test_create_ssh_askpass(self, mock_path):
 
-
         mock_path.dirname.return_value = 'file'
         mock_path.join.return_value = 'file/support/ssh_askpass'
 
@@ -234,3 +233,61 @@ class TestShell(unittest.TestCase):
         self.assertEqual(
             'export SSH_ASKPASS=file/support/ssh_askpass;export PASS=pass;export DISPLAY=:0;setsid my_command',
             result)
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_remove_user(self, mock_execute_cmd):
+
+        result = mock.Mock(returncode=0)
+        mock_execute_cmd.return_value = result
+
+        shell.remove_user('user', False, 'root', 'pass')
+
+        mock_execute_cmd.assert_called_once_with('userdel user', 'root', 'pass')
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_remove_user_force(self, mock_execute_cmd):
+
+        result1 = mock.Mock(returncode=1, err='userdel: user user is currently used by process 1')
+        result2 = mock.Mock(returncode=1, err='userdel: user user is currently used by process 2')
+        result3 = mock.Mock(returncode=0)
+        mock_execute_cmd.side_effect = [result1, None, result2, None, result3]
+
+        shell.remove_user('user', True, 'root', 'pass')
+
+        mock_execute_cmd.assert_has_calls([
+            mock.call('userdel user', 'root', 'pass'),
+            mock.call('kill -9 1', 'root', 'pass'),
+            mock.call('userdel user', 'root', 'pass'),
+            mock.call('kill -9 2', 'root', 'pass'),
+            mock.call('userdel user', 'root', 'pass'),
+        ])
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_remove_user_error(self, mock_execute_cmd):
+
+        result = mock.Mock(returncode=1)
+        mock_execute_cmd.return_value = result
+
+        with self.assertRaises(shell.ShellError) as err:
+            shell.remove_user('user', False, 'root', 'pass')
+
+        mock_execute_cmd.assert_called_once_with('userdel user', 'root', 'pass')
+        self.assertTrue('error removing user user' in str(err.exception))
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_remove_user_force_error(self, mock_execute_cmd):
+
+        result1 = mock.Mock(returncode=1, err='userdel: user user is currently used by process 1')
+        result2 = mock.Mock(returncode=1, err='other error')
+        result3 = mock.Mock(returncode=0)
+        mock_execute_cmd.side_effect = [result1, None, result2, None, result3]
+
+        with self.assertRaises(shell.ShellError) as err:
+            shell.remove_user('user', True, 'root', 'pass')
+
+        mock_execute_cmd.assert_has_calls([
+            mock.call('userdel user', 'root', 'pass'),
+            mock.call('kill -9 1', 'root', 'pass'),
+            mock.call('userdel user', 'root', 'pass')
+        ])
+        self.assertTrue('error removing user user' in str(err.exception))

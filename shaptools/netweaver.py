@@ -88,7 +88,6 @@ class NetweaverInstance(object):
         """
         Check if ERS instance is installed
         """
-        # TODO: update pattern
         msg_server = shell.find_pattern(r'enrepserver, EnqueueReplicator.*', processes.output)
         return bool(msg_server)
 

@@ -88,7 +88,7 @@ class TestNetweaver(unittest.TestCase):
         result = self._netweaver._execute_sapcontrol('mycommand')
 
         cmd = 'sapcontrol -nr 00 -function mycommand'
-        mock_execute.assert_called_once_with(cmd, 'ha1adm', 'pass')
+        mock_execute.assert_called_once_with(cmd, 'ha1adm', 'pass', None)
         self.assertEqual(proc_mock, result)
 
     @mock.patch('shaptools.shell.execute_cmd')
@@ -102,7 +102,7 @@ class TestNetweaver(unittest.TestCase):
         with self.assertRaises(netweaver.NetweaverError) as err:
             self._netweaver._execute_sapcontrol('mycommand')
 
-        mock_execute.assert_called_once_with(cmd, 'ha1adm', 'pass')
+        mock_execute.assert_called_once_with(cmd, 'ha1adm', 'pass', None)
         self.assertTrue(
             'Error running sapcontrol command: {}'.format(cmd) in str(err.exception))
 
@@ -114,9 +114,9 @@ class TestNetweaver(unittest.TestCase):
         proc_mock.cmd = cmd
 
         mock_execute.return_value = proc_mock
-        result = self._netweaver._execute_sapcontrol('mycommand', False)
+        result = self._netweaver._execute_sapcontrol('mycommand', exception=False)
 
-        mock_execute.assert_called_once_with(cmd, 'ha1adm', 'pass')
+        mock_execute.assert_called_once_with(cmd, 'ha1adm', 'pass', None)
         self.assertEqual(proc_mock, result)
 
     @mock.patch('shaptools.shell.find_pattern')
@@ -222,7 +222,7 @@ class TestNetweaver(unittest.TestCase):
             'SAPINST_EXECUTE_PRODUCT_ID=MYPRODUCT '\
             'SAPINST_SKIP_SUCCESSFULLY_FINISHED_DIALOG=true SAPINST_START_GUISERVER=false '\
             'SAPINST_INPUT_PARAMETERS_URL=/inifile.params'
-        mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass')
+        mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass', None)
 
     @mock.patch('shaptools.shell.execute_cmd')
     def test_install_error(self, mock_execute_cmd):
@@ -231,31 +231,35 @@ class TestNetweaver(unittest.TestCase):
         mock_execute_cmd.return_value = result
 
         with self.assertRaises(netweaver.NetweaverError) as err:
-            self._netweaver.install('/path', 'virtual', 'MYPRODUCT', '/inifile.params', 'root', 'pass')
+            self._netweaver.install(
+                '/path', 'virtual', 'MYPRODUCT', '/inifile.params', 'root', 'pass',
+                remote_host='remote')
 
         cmd = '/path/sapinst SAPINST_USE_HOSTNAME=virtual '\
             'SAPINST_EXECUTE_PRODUCT_ID=MYPRODUCT '\
             'SAPINST_SKIP_SUCCESSFULLY_FINISHED_DIALOG=true SAPINST_START_GUISERVER=false '\
             'SAPINST_INPUT_PARAMETERS_URL=/inifile.params'
-        mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass')
+        mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass', 'remote')
         self.assertTrue('SAP Netweaver installation failed' in str(err.exception))
 
     @mock.patch('shaptools.shell.remove_user')
     def test_uninstall(self, mock_remove_user):
 
         self._netweaver.install = mock.Mock()
-        self._netweaver.uninstall('/path', 'virtual', '/inifile.params', 'root', 'pass')
+        self._netweaver.uninstall(
+            '/path', 'virtual', '/inifile.params', 'root', 'pass', remote_host='remote')
 
         self._netweaver.install.assert_called_once_with(
-            '/path', 'virtual', 'NW_Uninstall:GENERIC.IND.PD', '/inifile.params', 'root', 'pass')
-        mock_remove_user.assert_called_once_with('ha1adm', True, 'root', 'pass')
+            '/path', 'virtual', 'NW_Uninstall:GENERIC.IND.PD',
+            '/inifile.params', 'root', 'pass', remote_host='remote')
+        mock_remove_user.assert_called_once_with('ha1adm', True, 'root', 'pass', 'remote')
 
     def test_get_process_list(self):
         mock_result = mock.Mock(returncode=0)
         self._netweaver._execute_sapcontrol = mock.Mock(return_value=mock_result)
-        result = self._netweaver.get_process_list()
+        result = self._netweaver.get_process_list(host='host')
         self._netweaver._execute_sapcontrol.assert_called_once_with(
-            'GetProcessList', exception=False)
+            'GetProcessList', exception=False, host='host')
         self.assertEqual(mock_result, result)
 
         self._netweaver._execute_sapcontrol.mock_reset()

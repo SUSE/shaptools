@@ -240,9 +240,9 @@ class TestShell(unittest.TestCase):
         result = mock.Mock(returncode=0)
         mock_execute_cmd.return_value = result
 
-        shell.remove_user('user', False, 'root', 'pass')
+        shell.remove_user('user', False, 'root', 'pass', 'remote_host')
 
-        mock_execute_cmd.assert_called_once_with('userdel user', 'root', 'pass')
+        mock_execute_cmd.assert_called_once_with('userdel user', 'root', 'pass', 'remote_host')
 
     @mock.patch('shaptools.shell.execute_cmd')
     def test_remove_user_force(self, mock_execute_cmd):
@@ -255,11 +255,11 @@ class TestShell(unittest.TestCase):
         shell.remove_user('user', True, 'root', 'pass')
 
         mock_execute_cmd.assert_has_calls([
-            mock.call('userdel user', 'root', 'pass'),
-            mock.call('kill -9 1', 'root', 'pass'),
-            mock.call('userdel user', 'root', 'pass'),
-            mock.call('kill -9 2', 'root', 'pass'),
-            mock.call('userdel user', 'root', 'pass'),
+            mock.call('userdel user', 'root', 'pass', None),
+            mock.call('kill -9 1', 'root', 'pass', None),
+            mock.call('userdel user', 'root', 'pass', None),
+            mock.call('kill -9 2', 'root', 'pass', None),
+            mock.call('userdel user', 'root', 'pass', None),
         ])
 
     @mock.patch('shaptools.shell.execute_cmd')
@@ -271,7 +271,7 @@ class TestShell(unittest.TestCase):
         with self.assertRaises(shell.ShellError) as err:
             shell.remove_user('user', False, 'root', 'pass')
 
-        mock_execute_cmd.assert_called_once_with('userdel user', 'root', 'pass')
+        mock_execute_cmd.assert_called_once_with('userdel user', 'root', 'pass', None)
         self.assertTrue('error removing user user' in str(err.exception))
 
     @mock.patch('shaptools.shell.execute_cmd')
@@ -286,8 +286,8 @@ class TestShell(unittest.TestCase):
             shell.remove_user('user', True, 'root', 'pass')
 
         mock_execute_cmd.assert_has_calls([
-            mock.call('userdel user', 'root', 'pass'),
-            mock.call('kill -9 1', 'root', 'pass'),
-            mock.call('userdel user', 'root', 'pass')
+            mock.call('userdel user', 'root', 'pass', None),
+            mock.call('kill -9 1', 'root', 'pass', None),
+            mock.call('userdel user', 'root', 'pass', None)
         ])
         self.assertTrue('error removing user user' in str(err.exception))

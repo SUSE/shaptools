@@ -290,7 +290,7 @@ class NetweaverInstance(object):
         self.install(
             software_path, virtual_host, self.UNINSTALL_PRODUCT, conf_file, root_user, password,
             remote_host=remote_host)
-        shell.remove_user(user, True, root_user, password)
+        shell.remove_user(user, True, root_user, password, remote_host)
 
     def get_process_list(self, exception=True, **kwargs):
         """

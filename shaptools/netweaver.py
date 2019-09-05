@@ -258,7 +258,7 @@ class NetweaverInstance(object):
         current_time = time.clock()
         current_timeout = current_time + timeout
         while current_time <= current_timeout:
-            result = NetweaverInstance.install(
+            result = cls.install(
                 software_path, virtual_host, product_id, conf_file, root_user, password,
                 exception=False, remote_host=remote_host)
 
@@ -319,7 +319,7 @@ class NetweaverInstance(object):
             raise NetweaverError('Error running sapcontrol command: {}'.format(result.cmd))
         return result
 
-    def start(self, wait=15, delay=0, **kwargs):
+    def start(self, wait=15, delay=0, exception=True, **kwargs):
         """
         Start SAP instance
         Args:
@@ -330,10 +330,11 @@ class NetweaverInstance(object):
         else:
             cmd = 'Start'
         result = self._execute_sapcontrol(cmd, exception=False, **kwargs)
-        if result.returncode:
+        if exception and result.returncode:
             raise NetweaverError('Error running sapcontrol command: {}'.format(result.cmd))
+        return result
 
-    def stop(self, wait=15, delay=0, **kwargs):
+    def stop(self, wait=15, delay=0, exception=True, **kwargs):
         """
         Stop SAP instance
         Args:
@@ -344,5 +345,6 @@ class NetweaverInstance(object):
         else:
             cmd = 'Stop'
         result = self._execute_sapcontrol(cmd, exception=False, **kwargs)
-        if result.returncode:
+        if exception and result.returncode:
             raise NetweaverError('Error running sapcontrol command: {}'.format(result.cmd))
+        return result

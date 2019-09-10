@@ -164,17 +164,18 @@ def execute_cmd(cmd, user=None, password=None, remote_host=None):
 
     return result
 
-def remove_user(user, force=False, root_user=None, root_password=None):
+def remove_user(user, force=False, root_user=None, root_password=None, remote_host=None):
     """
     Remove user from system
     Args:
         user (str): User to remove
         force (bool): Force the remove process even though the user is used in some process
+        remote_host (str, opt): Remote host where the command will be executed
     """
     cmd = 'userdel {}'.format(user)
     process_executing = r'userdel: user {} is currently used by process (.*)'.format(user)
     while True:
-        result = execute_cmd(cmd, root_user, root_password)
+        result = execute_cmd(cmd, root_user, root_password, remote_host)
         if result.returncode == 0:
             return
         elif force:
@@ -182,7 +183,7 @@ def remove_user(user, force=False, root_user=None, root_password=None):
             if not process_pid:
                 break
             kill_cmd = 'kill -9 {}'.format(process_pid.group(1))
-            execute_cmd(kill_cmd, root_user, root_password)
+            execute_cmd(kill_cmd, root_user, root_password, remote_host)
         else:
             break
     raise ShellError('error removing user {}'.format(user))

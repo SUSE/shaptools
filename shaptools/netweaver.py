@@ -112,7 +112,7 @@ class NetweaverInstance(object):
         Check if ASCS instance is installed
         """
         msg_server = shell.find_pattern(r'msg_server, MessageServer,.*', processes.output)
-        enserver = shell.find_pattern(r'enserver, EnqueueServer,', processes.output)
+        enserver = shell.find_pattern(r'enserver, EnqueueServer,.*', processes.output)
         return bool(msg_server and enserver)
 
     @staticmethod
@@ -120,8 +120,19 @@ class NetweaverInstance(object):
         """
         Check if ERS instance is installed
         """
-        msg_server = shell.find_pattern(r'enrepserver, EnqueueReplicator.*', processes.output)
-        return bool(msg_server)
+        enrepserver = shell.find_pattern(r'enrepserver, EnqueueReplicator,.*', processes.output)
+        return bool(enrepserver)
+
+    @staticmethod
+    def _is_app_server_installed(processes):
+        """
+        Check if an application server (PAS or AAS) instance is installed
+        """
+        disp = shell.find_pattern(r'disp\+work, Dispatcher,.*', processes.output)
+        igswd = shell.find_pattern(r'igswd_mt, IGS Watchdog,.*', processes.output)
+        gwrd = shell.find_pattern(r'gwrd, Gateway,.*', processes.output)
+        icman = shell.find_pattern(r'icman, ICM,.*', processes.output)
+        return bool(disp and igswd and gwrd and icman)
 
     def is_installed(self, sap_instance=None):
         """
@@ -144,6 +155,8 @@ class NetweaverInstance(object):
             return self._is_ascs_installed(processes)
         elif sap_instance == 'ers':
             return self._is_ers_installed(processes)
+        elif sap_instance in ['pas', 'aas']:
+            return self._is_app_server_installed(processes)
         else:
             raise ValueError('provided sap instance type is not valid: {}'.format(sap_instance))
 

@@ -162,7 +162,7 @@ class TestNetweaver(unittest.TestCase):
 
         mock_find_pattern.assert_has_calls([
             mock.call(r'msg_server, MessageServer,.*', 'output'),
-            mock.call(r'enserver, EnqueueServer,', 'output')
+            mock.call(r'enserver, EnqueueServer,.*', 'output')
         ])
 
         mock_find_pattern.reset_mock()
@@ -172,7 +172,7 @@ class TestNetweaver(unittest.TestCase):
 
         mock_find_pattern.assert_has_calls([
             mock.call(r'msg_server, MessageServer,.*', 'output'),
-            mock.call(r'enserver, EnqueueServer,', 'output')
+            mock.call(r'enserver, EnqueueServer,.*', 'output')
         ])
 
     @mock.patch('shaptools.shell.find_pattern')
@@ -184,7 +184,7 @@ class TestNetweaver(unittest.TestCase):
         self.assertTrue(self._netweaver._is_ers_installed(mock_process))
 
         mock_find_pattern.assert_called_once_with(
-            r'enrepserver, EnqueueReplicator.*', 'output')
+            r'enrepserver, EnqueueReplicator,.*', 'output')
 
         mock_find_pattern.reset_mock()
         mock_find_pattern.side_effect = ['']
@@ -192,7 +192,7 @@ class TestNetweaver(unittest.TestCase):
         self.assertFalse(self._netweaver._is_ers_installed(mock_process))
 
         mock_find_pattern.assert_called_once_with(
-            r'enrepserver, EnqueueReplicator.*', 'output')
+            r'enrepserver, EnqueueReplicator,.*', 'output')
 
     def test_is_installed(self):
 

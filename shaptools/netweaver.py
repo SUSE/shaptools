@@ -10,6 +10,8 @@ SAP Netweaver management module
 
 import logging
 import time
+import fileinput
+import re
 
 from shaptools import shell
 
@@ -146,6 +148,32 @@ class NetweaverInstance(object):
             return self._is_ers_installed(processes)
         else:
             raise ValueError('provided sap instance type is not valid: {}'.format(sap_instance))
+
+    @classmethod
+    def update_conf_file(cls, conf_file, **kwargs):
+        """
+        Update NW installation config file parameters. Add the parameters if they don't exist
+
+        Args:
+            conf_file (str): Path to the netweaver installation configuration file
+            kwargs (opt): Dictionary with the values to be updated.
+                Use the exact name of the netweaver configuration file
+
+        kwargs can be used in the next two modes:
+            update_conf_file(conf_file, sid='HA1', hostname='hacert01')
+            update_conf_file(conf_file, **{'sid': 'HA1', 'hostname': 'hacert01'})
+        """
+        for key, value in kwargs.items():
+            pattern = '{key}( *)=.*'.format(key=key)
+            new_value = '{key} = {value}'.format(key=key, value=value)
+            with open(conf_file, 'r+') as file_cache:
+                if key in file_cache.read():
+                    for line in fileinput.input(conf_file, inplace=1):
+                        line = re.sub(pattern, new_value, line)
+                        print(line, end='')
+                else:
+                    file_cache.write('\n\n'+new_value)
+        return conf_file
 
     @classmethod
     def install(

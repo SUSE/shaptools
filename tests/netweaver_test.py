@@ -257,6 +257,22 @@ class TestNetweaver(unittest.TestCase):
             'SAPINST_INPUT_PARAMETERS_URL=/inifile.params'
         mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass', None)
 
+    @mock.patch('shaptools.netweaver.NetweaverInstance._remove_old_files')
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_install_cwd(self, mock_execute_cmd, mock_remove_old_files):
+
+        result = mock.Mock(returncode=0)
+        mock_execute_cmd.return_value = result
+
+        self._netweaver.install(
+            '/path', 'virtual', 'MYPRODUCT', '/inifile.params', 'root', 'pass', cwd='/tmp')
+        cmd = '/path/sapinst SAPINST_USE_HOSTNAME=virtual '\
+            'SAPINST_EXECUTE_PRODUCT_ID=MYPRODUCT '\
+            'SAPINST_SKIP_SUCCESSFULLY_FINISHED_DIALOG=true SAPINST_START_GUISERVER=false '\
+            'SAPINST_INPUT_PARAMETERS_URL=/inifile.params SAPINST_CWD=/tmp'
+        mock_remove_old_files.assert_called_once_with('/tmp', 'root', 'pass', None)
+        mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass', None)
+
     @mock.patch('shaptools.shell.execute_cmd')
     def test_install_error(self, mock_execute_cmd):
 
@@ -368,12 +384,12 @@ class TestNetweaver(unittest.TestCase):
 
         netweaver.NetweaverInstance.install_ers(
             'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-            ascs_password='ascs_pass', timeout=5, interval=1)
+            ascs_password='ascs_pass', timeout=5, interval=1, cwd='/tmp')
 
         mock_result.group.assert_called_once_with(1)
         mock_install.assert_called_once_with(
             'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-            exception=False, remote_host=None)
+            exception=False, remote_host=None, cwd='/tmp')
         mock_restart_needed.assert_called_once_with(mock_install_result)
         mock_restart.assert_called_once_with('conf_file', 'ers_pass', 'ascs_pass', None)
 
@@ -403,13 +419,13 @@ class TestNetweaver(unittest.TestCase):
         mock_install.assert_has_calls([
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None)
+                exception=False, remote_host=None, cwd=None)
         ])
         mock_restart_needed.assert_has_calls([
             mock.call(mock_install_result),
@@ -454,13 +470,13 @@ class TestNetweaver(unittest.TestCase):
         mock_install.assert_has_calls([
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None)
+                exception=False, remote_host=None, cwd=None)
         ])
         mock_restart_needed.assert_has_calls([
             mock.call(mock_install_result),
@@ -503,13 +519,13 @@ class TestNetweaver(unittest.TestCase):
         mock_install.assert_has_calls([
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None)
+                exception=False, remote_host=None, cwd=None)
         ])
         mock_restart_needed.assert_has_calls([
             mock.call(mock_install_result),

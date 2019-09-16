@@ -160,6 +160,19 @@ class NetweaverInstance(object):
         else:
             raise ValueError('provided sap instance type is not valid: {}'.format(sap_instance))
 
+    @staticmethod
+    def _remove_old_files(cwd, root_user, password, remote_host):
+        """
+        Remove old files from SAP installation cwd folder. Only start_dir.cd must remain
+        """
+        # TODO: check start_dir.cd exists
+        remove_files_cmd = "printf '%q ' {}/*".format(cwd)
+        remove_files = shell.execute_cmd(
+            remove_files_cmd, root_user, password, remote_host)
+        remove_files = remove_files.output.replace('{}/start_dir.cd'.format(cwd), '')
+        cmd = 'rm -rf {}'.format(remove_files)
+        shell.execute_cmd(cmd, root_user, password, remote_host)
+
     @classmethod
     def install(
             cls, software_path, virtual_host, product_id, conf_file, root_user, password, **kwargs):
@@ -173,21 +186,28 @@ class NetweaverInstance(object):
             conf_file (str): Path to the configuration file
             root_user (str): Root user name
             password (str): Root user password
+            cwd (str, opt): New value for SAPINST_CWD parameter
             exception (bool, opt): Raise and exception in case of error if True, return result
                 object otherwise
             remote_host (str, opt): Remote host where the command will be executed
         """
+        cwd = kwargs.get('cwd', None)
         raise_exception = kwargs.get('exception', True)
         remote_host = kwargs.get('remote_host', None)
+
+        if cwd:
+            # This operation must be done in order to avoid incorrect files usage
+            cls._remove_old_files(cwd, root_user, password, remote_host)
 
         cmd = '{software_path}/sapinst SAPINST_USE_HOSTNAME={virtual_host} '\
             'SAPINST_EXECUTE_PRODUCT_ID={product_id} '\
             'SAPINST_SKIP_SUCCESSFULLY_FINISHED_DIALOG=true SAPINST_START_GUISERVER=false '\
-            'SAPINST_INPUT_PARAMETERS_URL={conf_file}'.format(
+            'SAPINST_INPUT_PARAMETERS_URL={conf_file}{cwd}'.format(
                 software_path=software_path,
                 virtual_host=virtual_host,
                 product_id=product_id,
-                conf_file=conf_file)
+                conf_file=conf_file,
+                cwd=' SAPINST_CWD={}'.format(cwd) if cwd else '')
         result = shell.execute_cmd(cmd, root_user, password, remote_host)
         if result.returncode and raise_exception:
             raise NetweaverError('SAP Netweaver installation failed')
@@ -267,13 +287,14 @@ class NetweaverInstance(object):
             conf_file, 'nwUsers.sidadmPassword += +(.*)').group(1)
         ascs_pass = kwargs.get('ascs_password', ers_pass)
         remote_host = kwargs.get('remote_host', None)
+        cwd = kwargs.get('cwd', None)
 
         current_time = time.clock()
         current_timeout = current_time + timeout
         while current_time <= current_timeout:
             result = cls.install(
                 software_path, virtual_host, product_id, conf_file, root_user, password,
-                exception=False, remote_host=remote_host)
+                exception=False, remote_host=remote_host, cwd=cwd)
 
             if result.returncode == cls.SUCCESSFULLY_INSTALLED or \
                     cls._ascs_restart_needed(result):

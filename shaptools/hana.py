@@ -376,7 +376,7 @@ class HanaInstance(object):
               '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
                   name, remote_host, remote_instance, replication_mode, operation_mode)
 
-        current_time = time.clock()
+        current_time = time.time()
         current_timeout = current_time + timeout
         while current_time <= current_timeout:
             return_code = self._run_hana_command(cmd, False).returncode
@@ -387,7 +387,7 @@ class HanaInstance(object):
                 self._run_hana_command(cmd)
                 break
             time.sleep(interval)
-            current_time = time.clock()
+            current_time = time.time()
             continue
         else:
             raise HanaError(

@@ -364,20 +364,20 @@ class TestNetweaver(unittest.TestCase):
         mock_start.assert_called_once_with(
             host='ascs_hostname', inst='ascs_inst', user='ha1adm', password='ascs_pass')
 
-    @mock.patch('time.clock')
+    @mock.patch('time.time')
     @mock.patch('shaptools.netweaver.NetweaverInstance.get_attribute_from_file')
     @mock.patch('shaptools.netweaver.NetweaverInstance.install')
     @mock.patch('shaptools.netweaver.NetweaverInstance._ascs_restart_needed')
     @mock.patch('shaptools.netweaver.NetweaverInstance._restart_ascs')
     def test_install_ers_first_install(
             self, mock_restart, mock_restart_needed, mock_install,
-            mock_get_attribute, mock_clock):
+            mock_get_attribute, mock_time):
 
         mock_result = mock.Mock()
         mock_result.group.return_value = 'ers_pass'
         mock_get_attribute.return_value = mock_result
 
-        mock_clock.return_value = 1
+        mock_time.return_value = 1
         mock_install_result = mock.Mock(returncode=111)
         mock_install.return_value = mock_install_result
         mock_restart_needed.return_value = True
@@ -393,20 +393,20 @@ class TestNetweaver(unittest.TestCase):
         mock_restart_needed.assert_called_once_with(mock_install_result)
         mock_restart.assert_called_once_with('conf_file', 'ers_pass', 'ascs_pass', None)
 
-    @mock.patch('time.clock')
+    @mock.patch('time.time')
     @mock.patch('shaptools.netweaver.NetweaverInstance.get_attribute_from_file')
     @mock.patch('shaptools.netweaver.NetweaverInstance.install')
     @mock.patch('shaptools.netweaver.NetweaverInstance._ascs_restart_needed')
     @mock.patch('shaptools.netweaver.NetweaverInstance._restart_ascs')
     def test_install_ers_loop_install(
             self, mock_restart, mock_restart_needed, mock_install,
-            mock_get_attribute, mock_sleep, mock_clock):
+            mock_get_attribute, mock_sleep, mock_time):
 
         mock_result = mock.Mock()
         mock_result.group.return_value = 'ers_pass'
         mock_get_attribute.return_value = mock_result
 
-        mock_clock.side_effect = [1, 2, 3, 4, 5]
+        mock_time.side_effect = [1, 2, 3, 4, 5]
         mock_install_result = mock.Mock(returncode=111)
         mock_install.side_effect = [mock_install_result, mock_install_result, mock_install_result]
         mock_restart_needed.side_effect = [False, False, True]
@@ -433,7 +433,7 @@ class TestNetweaver(unittest.TestCase):
             mock.call(mock_install_result)
         ])
         mock_restart.assert_called_once_with('conf_file', 'ers_pass', 'ers_pass', None)
-        mock_clock.assert_has_calls([
+        mock_time.assert_has_calls([
             mock.call(),
             mock.call(),
             mock.call()
@@ -443,7 +443,7 @@ class TestNetweaver(unittest.TestCase):
             mock.call(1)
         ])
 
-    @mock.patch('time.clock')
+    @mock.patch('time.time')
     @mock.patch('time.sleep')
     @mock.patch('shaptools.netweaver.NetweaverInstance.get_attribute_from_file')
     @mock.patch('shaptools.netweaver.NetweaverInstance.install')
@@ -451,13 +451,13 @@ class TestNetweaver(unittest.TestCase):
     @mock.patch('shaptools.netweaver.NetweaverInstance._restart_ascs')
     def test_install_ers_loop_install(
             self, mock_restart, mock_restart_needed, mock_install,
-            mock_get_attribute, mock_sleep, mock_clock):
+            mock_get_attribute, mock_sleep, mock_time):
 
         mock_result = mock.Mock()
         mock_result.group.return_value = 'ers_pass'
         mock_get_attribute.return_value = mock_result
 
-        mock_clock.side_effect = [1, 2, 3, 4, 5]
+        mock_time.side_effect = [1, 2, 3, 4, 5]
         mock_install_result = mock.Mock(returncode=111)
         mock_install.side_effect = [mock_install_result, mock_install_result, mock_install_result]
         mock_restart_needed.side_effect = [False, False, True]
@@ -484,27 +484,27 @@ class TestNetweaver(unittest.TestCase):
             mock.call(mock_install_result)
         ])
         mock_restart.assert_called_once_with('conf_file', 'ers_pass', 'ers_pass', None)
-        self.assertEqual(mock_clock.call_count, 3)
+        self.assertEqual(mock_time.call_count, 3)
         self.assertEqual(mock_sleep.call_count, 2)
         mock_sleep.assert_has_calls([
             mock.call(1),
             mock.call(1)
         ])
 
-    @mock.patch('time.clock')
+    @mock.patch('time.time')
     @mock.patch('time.sleep')
     @mock.patch('shaptools.netweaver.NetweaverInstance.get_attribute_from_file')
     @mock.patch('shaptools.netweaver.NetweaverInstance.install')
     @mock.patch('shaptools.netweaver.NetweaverInstance._ascs_restart_needed')
     def test_install_ers_error_install(
             self, mock_restart_needed, mock_install,
-            mock_get_attribute, mock_sleep, mock_clock):
+            mock_get_attribute, mock_sleep, mock_time):
 
         mock_result = mock.Mock()
         mock_result.group.return_value = 'ers_pass'
         mock_get_attribute.return_value = mock_result
 
-        mock_clock.side_effect = [1, 2, 3, 5]
+        mock_time.side_effect = [1, 2, 3, 5]
         mock_install_result = mock.Mock(returncode=111)
         mock_install.side_effect = [mock_install_result, mock_install_result, mock_install_result]
         mock_restart_needed.side_effect = [False, False, False]
@@ -532,7 +532,7 @@ class TestNetweaver(unittest.TestCase):
             mock.call(mock_install_result),
             mock.call(mock_install_result)
         ])
-        self.assertEqual(mock_clock.call_count, 4)
+        self.assertEqual(mock_time.call_count, 4)
         self.assertEqual(mock_sleep.call_count, 3)
         mock_sleep.assert_has_calls([
             mock.call(1),

@@ -155,7 +155,7 @@ class NetweaverInstance(object):
             return self._is_ascs_installed(processes)
         elif sap_instance == 'ers':
             return self._is_ers_installed(processes)
-        elif sap_instance in ['pas', 'aas']:
+        elif sap_instance in ['ci', 'di']:
             return self._is_app_server_installed(processes)
         else:
             raise ValueError('provided sap instance type is not valid: {}'.format(sap_instance))
@@ -289,7 +289,7 @@ class NetweaverInstance(object):
         remote_host = kwargs.get('remote_host', None)
         cwd = kwargs.get('cwd', None)
 
-        current_time = time.clock()
+        current_time = time.time()
         current_timeout = current_time + timeout
         while current_time <= current_timeout:
             result = cls.install(
@@ -302,7 +302,7 @@ class NetweaverInstance(object):
                 break
 
             time.sleep(interval)
-            current_time = time.clock()
+            current_time = time.time()
         else:
             raise NetweaverError(
                 'SAP Netweaver ERS installation failed after {} seconds'.format(timeout))

@@ -194,6 +194,33 @@ class TestNetweaver(unittest.TestCase):
         mock_find_pattern.assert_called_once_with(
             r'enrepserver, EnqueueReplicator,.*', 'output')
 
+    @mock.patch('shaptools.shell.find_pattern')
+    def test_is_app_server_installed(self, mock_find_pattern):
+
+        mock_process = mock.Mock(output='output')
+        mock_find_pattern.side_effect = ['found', 'found', 'found', 'found']
+
+        self.assertTrue(self._netweaver._is_app_server_installed(mock_process))
+
+        mock_find_pattern.assert_has_calls([
+            mock.call(r'disp\+work, Dispatcher,.*', 'output',),
+            mock.call(r'igswd_mt, IGS Watchdog,.*', 'output',),
+            mock.call(r'gwrd, Gateway,.*', 'output',),
+            mock.call(r'icman, ICM,.*', 'output')
+        ])
+
+        mock_find_pattern.reset_mock()
+        mock_find_pattern.side_effect = ['found', 'found', 'found', '']
+
+        self.assertFalse(self._netweaver._is_app_server_installed(mock_process))
+
+        mock_find_pattern.assert_has_calls([
+            mock.call(r'disp\+work, Dispatcher,.*', 'output',),
+            mock.call(r'igswd_mt, IGS Watchdog,.*', 'output',),
+            mock.call(r'gwrd, Gateway,.*', 'output',),
+            mock.call(r'icman, ICM,.*', 'output')
+        ])
+
     def test_is_installed(self):
 
         processes_mock = mock.Mock(returncode=0)
@@ -243,6 +270,35 @@ class TestNetweaver(unittest.TestCase):
         self.assertTrue(self._netweaver.is_installed('ers'))
         self._netweaver.get_process_list.assert_called_once_with(False)
         self._netweaver._is_ers_installed.assert_called_once_with(processes_mock)
+
+    def test_is_installed_app_server(self):
+
+        processes_mock = mock.Mock(returncode=0)
+        self._netweaver.get_process_list = mock.Mock(return_value=processes_mock)
+        self._netweaver._is_app_server_installed = mock.Mock(return_value=True)
+        self.assertTrue(self._netweaver.is_installed('ci'))
+        self._netweaver.get_process_list.assert_called_once_with(False)
+        self._netweaver._is_app_server_installed.assert_called_once_with(processes_mock)
+
+        processes_mock = mock.Mock(returncode=0)
+        self._netweaver.get_process_list = mock.Mock(return_value=processes_mock)
+        self._netweaver._is_app_server_installed = mock.Mock(return_value=True)
+        self.assertTrue(self._netweaver.is_installed('di'))
+        self._netweaver.get_process_list.assert_called_once_with(False)
+        self._netweaver._is_app_server_installed.assert_called_once_with(processes_mock)
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_remove_old_files(self, mock_execute_cmd):
+
+        mock_output = mock.Mock(output='file_a /tmp/start_dir.cd file_b')
+        mock_execute_cmd.return_value = mock_output
+
+        netweaver.NetweaverInstance._remove_old_files('/tmp', 'root', 'pass', None)
+
+        mock_execute_cmd.assert_has_calls([
+            mock.call('printf \'%q \' /tmp/*', 'root', 'pass', None),
+            mock.call('rm -rf file_a  file_b', 'root', 'pass', None)
+        ])
 
     @mock.patch('shaptools.shell.execute_cmd')
     def test_install(self, mock_execute_cmd):

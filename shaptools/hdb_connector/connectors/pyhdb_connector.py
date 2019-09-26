@@ -47,7 +47,7 @@ class PyhdbConnector(base_connector.BaseConnector):
                 user=kwargs.get('user'),
                 password=kwargs.get('password'),
             )
-        except socket.error as err:
+        except (socket.error, pyhdb.exceptions.DatabaseError) as err:
             raise base_connector.ConnectionError('connection failed: {}'.format(err))
         self._logger.info('connected successfully')
 

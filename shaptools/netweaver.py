@@ -139,7 +139,7 @@ class NetweaverInstance(object):
         Check if SAP Netweaver is installed
 
         Args:
-            sap_instance (str): SAP instance type. Available options: ascs
+            sap_instance (str): SAP instance type. Available options: ascs, ers, ci, di
                 If None, if any NW installation is existing will be checked
 
         Returns:
@@ -148,17 +148,18 @@ class NetweaverInstance(object):
         processes = self.get_process_list(False)
         # TODO: Might be done using a dictionary to store the methods and keys
         if processes.returncode not in self.GETPROCESSLIST_SUCCESS_CODES:
-            return False
+            state = False
         elif not sap_instance:
-            return True
+            state = True
         elif sap_instance == 'ascs':
-            return self._is_ascs_installed(processes)
+            state = self._is_ascs_installed(processes)
         elif sap_instance == 'ers':
-            return self._is_ers_installed(processes)
+            state = self._is_ers_installed(processes)
         elif sap_instance in ['ci', 'di']:
-            return self._is_app_server_installed(processes)
+            state = self._is_app_server_installed(processes)
         else:
             raise ValueError('provided sap instance type is not valid: {}'.format(sap_instance))
+        return state
 
     @staticmethod
     def _remove_old_files(cwd, root_user, password, remote_host):
@@ -187,6 +188,8 @@ class NetweaverInstance(object):
             root_user (str): Root user name
             password (str): Root user password
             cwd (str, opt): New value for SAPINST_CWD parameter
+                CAUTION: All of the files stored in this path will be removed except the
+                start_dir.cd. This folder only will contain temporary files about the installation.
             exception (bool, opt): Raise and exception in case of error if True, return result
                 object otherwise
             remote_host (str, opt): Remote host where the command will be executed

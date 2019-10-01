@@ -8,6 +8,8 @@ SAP Netweaver management module
 :since: 2010-07-30
 """
 
+from __future__ import print_function
+
 import logging
 import time
 import fileinput

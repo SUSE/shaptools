@@ -252,13 +252,13 @@ class TestNetweaver(unittest.TestCase):
             '/tmp/copy.inifile.params', sid='HA1',
             sidadmPassword='testpwd', masterPwd='Suse1234')
         self.assertTrue(filecmp.cmp(pwd+'/support/modified.inifile.params', conf_file))
-
+        
+        #case when new entry is added to config file
         shutil.copyfile(pwd+'/support/original.inifile.params', '/tmp/copy.inifile.params')
         conf_file = netweaver.NetweaverInstance.update_conf_file(
             '/tmp/copy.inifile.params',
-            **{'NW_GetSidNoProfiles.sid': 'HA1', 'nwUsers.sidadmPassword': 'testpwd',
-               'NW_GetMasterPassword.masterPwd': 'Suse1234'})
-        self.assertTrue(filecmp.cmp(pwd+'/support/modified.inifile.params', conf_file))
+            **{'NW_HDB_getDBInfo.systemPassword': 'test1234'})
+        self.assertTrue(filecmp.cmp(pwd+'/support/new.inifile.params', conf_file))
 
     @mock.patch('shaptools.shell.execute_cmd')
     def test_install(self, mock_execute_cmd):

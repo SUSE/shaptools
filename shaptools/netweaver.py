@@ -174,7 +174,7 @@ class NetweaverInstance(object):
                         line = re.sub(pattern, new_value, line)
                         print(line, end='')
                 else:
-                    file_cache.write('\n\n'+new_value)
+                    file_cache.write('\n'*5+new_value)
         return conf_file
 
     @classmethod

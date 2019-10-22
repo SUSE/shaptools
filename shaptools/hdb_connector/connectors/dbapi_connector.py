@@ -24,6 +24,7 @@ class DbapiConnector(base_connector.BaseConnector):
     def __init__(self):
         super(DbapiConnector, self).__init__()
         self._logger.info('dbapi package loaded')
+        self.__properties = {}
 
     def connect(self, host, port=30015, **kwargs):
         """
@@ -37,14 +38,21 @@ class DbapiConnector(base_connector.BaseConnector):
             port (int): Database port (3{inst_number}15 by default)
             user (str): Existing username in the database
             password (str): User password
+            properties : Additional properties can be used with named parameters. More info at:
+                https://help.sap.com/viewer/0eec0d68141541d1b07893a39944924e/2.0.02/en-US/ee592e89dcce4480a99571a4ae7a702f.html
+
+        Example:
+            To avoid automatic reconnection set RECONNECT='FALSE' as parameter
         """
         self._logger.info('connecting to SAP HANA database at %s:%s', host, port)
+        self.__properties = kwargs
         try:
             self._connection = dbapi.connect(
                 address=host,
                 port=port,
-                user=kwargs.get('user'),
-                password=kwargs.get('password'),
+                #user=kwargs.get('user'),
+                #password=kwargs.get('password'),
+                **self.__properties
             )
         except dbapi.Error as err:
             raise base_connector.ConnectionError('connection failed: {}'.format(err))
@@ -70,3 +78,38 @@ class DbapiConnector(base_connector.BaseConnector):
         self._logger.info('disconnecting from SAP HANA database')
         self._connection.close()
         self._logger.info('disconnected successfully')
+
+    def isconnected(self):
+        """
+        Check the connection status
+
+        INFO: Sometimes the state is not changed unless a query is performed
+
+        Returns:
+            bool: True if connected False otherwise
+        """
+        if self._connection:
+            return self._connection.isconnected()
+        return False
+
+    def reconnect(self):
+        """
+        Reconnect to the previously connected SAP HANA database if the connection is lost
+
+        The dbapi object str result example:
+        <dbapi.Connection Connection object : 10.10.10.10,30015,SYSTEM,Qwerty1234,True>
+
+        """
+        if not self._connection:
+            raise base_connector.ConnectionError('connect method must be used first to reconnect')
+        if not self.isconnected():
+            connection_data = str(self._connection).split(':')[-1].strip()[:-1].split(',')
+            host = connection_data[0]
+            port = int(connection_data[1])
+            #user = connection_data[2]
+            #password = connection_data[3]
+            #self.connect(host, port, user=user, password=password, **self._properties)
+            self._logger.info('reconnecting...')
+            self.connect(host, port, **self.__properties)
+        else:
+            self._logger.info('connection already created')

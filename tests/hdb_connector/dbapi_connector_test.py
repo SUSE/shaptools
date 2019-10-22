@@ -66,13 +66,16 @@ class TestDbapiConnector(unittest.TestCase):
     @mock.patch('shaptools.hdb_connector.connectors.dbapi_connector.dbapi')
     @mock.patch('logging.Logger.info')
     def test_connect(self, mock_logger, mock_dbapi):
-        self._conn.connect('host', 1234, user='user', password='pass')
+        self._conn.connect('host', 1234, user='user', password='pass', RECONNECT='FALSE')
         mock_dbapi.connect.assert_called_once_with(
-            address='host', port=1234, user='user', password='pass')
+            address='host', port=1234, user='user', password='pass', RECONNECT='FALSE')
         mock_logger.assert_has_calls([
             mock.call('connecting to SAP HANA database at %s:%s', 'host', 1234),
             mock.call('connected successfully')
         ])
+        self.assertEqual(
+            self._conn._DbapiConnector__properties,
+            {'user':'user', 'password':'pass', 'RECONNECT': 'FALSE'})
 
     @mock.patch('shaptools.hdb_connector.connectors.dbapi_connector.dbapi')
     @mock.patch('logging.Logger.info')
@@ -136,3 +139,43 @@ class TestDbapiConnector(unittest.TestCase):
             mock.call('disconnecting from SAP HANA database'),
             mock.call('disconnected successfully')
         ])
+
+    def test_isconnected_true(self):
+        self._conn._connection = mock.Mock()
+        self._conn._connection.isconnected.return_value = True
+        self.assertTrue(self._conn.isconnected())
+
+    def test_isconnected_false(self):
+        self._conn._connection = mock.Mock()
+        self._conn._connection.isconnected.return_value = False
+        self.assertFalse(self._conn.isconnected())
+
+        self._conn._connection = None
+        self.assertFalse(self._conn.isconnected())
+
+    def test_reconnect_error(self):
+        self._conn._connection = None
+        with self.assertRaises(self._dbapi_connector.base_connector.ConnectionError) as err:
+            self._conn.reconnect()
+        self.assertTrue('connect method must be used first to reconnect' in str(err.exception))
+
+    @mock.patch('logging.Logger.info')
+    def test_reconnect_connected(self, logger):
+        self._conn._connection = mock.Mock()
+        self._conn.isconnected = mock.Mock(return_value=True)
+        self._conn.reconnect()
+        logger.assert_called_once_with('connection already created')
+
+    @mock.patch('logging.Logger.info')
+    def test_reconnect(self, logger):
+        self._conn._connection = mock.Mock()
+        self._conn._DbapiConnector__properties = {'user': 'SYSTEM', 'password': 'Qwerty1234'}
+        self._conn.connect = mock.Mock()
+        self._conn._connection.__str__ = mock.Mock(return_value=\
+            '<dbapi.Connection Connection object : 10.10.10.10,30015,SYSTEM,Qwerty1234,True>')
+        self._conn.isconnected = mock.Mock(return_value=False)
+        self._conn.reconnect()
+
+        self._conn.connect.assert_called_once_with(
+            '10.10.10.10', 30015, user='SYSTEM', password='Qwerty1234')
+        logger.assert_called_once_with('reconnecting...')

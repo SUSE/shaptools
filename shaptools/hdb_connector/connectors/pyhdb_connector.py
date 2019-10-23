@@ -104,6 +104,7 @@ class PyhdbConnector(base_connector.BaseConnector):
         if not self._connection:
             raise base_connector.ConnectionError('connect method must be used first to reconnect')
         if not self.isconnected():
+            # Initialize the socket connection parameters as a new connection will be created
             self._connection.session_id = -1
             self._connection.packet_count = -1
             try:

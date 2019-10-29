@@ -38,6 +38,7 @@ class PyhdbConnector(base_connector.BaseConnector):
             port (int): Database port (3{inst_number}15 by default)
             user (str): Existing username in the database
             password (str): User password
+            timeout (int, optional): Connection and queries timeout in seconds
         """
         self._logger.info('connecting to SAP HANA database at %s:%s', host, port)
         try:
@@ -45,8 +46,9 @@ class PyhdbConnector(base_connector.BaseConnector):
                 host=host,
                 port=port,
                 user=kwargs.get('user'),
-                password=kwargs.get('password'),
+                password=kwargs.get('password')
             )
+            self._connection.timeout = kwargs.get('timeout', None)
         except (socket.error, pyhdb.exceptions.DatabaseError) as err:
             raise base_connector.ConnectionError('connection failed: {}'.format(err))
         self._logger.info('connected successfully')
@@ -75,3 +77,40 @@ class PyhdbConnector(base_connector.BaseConnector):
         self._logger.info('disconnecting from SAP HANA database')
         self._connection.close()
         self._logger.info('disconnected successfully')
+
+    def isconnected(self):
+        """
+        Check the connection status. It checks if the socket is properly working
+
+        INFO: Sometimes the state is not changed unless a query is performed
+
+        Returns:
+            bool: True if connected False otherwise
+        """
+        if self._connection and self._connection.isconnected():
+            try:
+                self._connection._socket.getpeername()
+                return True
+            except OSError:
+                self._logger.error('socket is not correctly working. closing socket')
+                self._connection._socket = None
+                return False
+        return False
+
+    def reconnect(self):
+        """
+        Reconnect to the previously connected SAP HANA database if the connection is lost
+        """
+        if not self._connection:
+            raise base_connector.ConnectionError('connect method must be used first to reconnect')
+        if not self.isconnected():
+            # Initialize the socket connection parameters as a new connection will be created
+            self._connection.session_id = -1
+            self._connection.packet_count = -1
+            try:
+                self._logger.info('reconnecting...')
+                self._connection.connect()
+            except (socket.error, pyhdb.exceptions.DatabaseError) as err:
+                raise base_connector.ConnectionError('connection failed: {}'.format(err))
+        else:
+            self._logger.info('connection already created')

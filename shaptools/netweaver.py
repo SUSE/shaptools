@@ -166,7 +166,7 @@ class NetweaverInstance(object):
             update_conf_file(conf_file, **{'sid': 'HA1', 'hostname': 'hacert01'})
         """
         for key, value in kwargs.items():
-            pattern = '{key}( *)=.*'.format(key=key)
+            pattern = '{key}\s+=.*'.format(key=key)
             new_value = '{key} = {value}'.format(key=key, value=value)
             with open(conf_file, 'r+') as file_cache:
                 if key in file_cache.read():
@@ -174,7 +174,7 @@ class NetweaverInstance(object):
                         line = re.sub(pattern, new_value, line)
                         print(line, end='')
                 else:
-                    file_cache.write('\n'*5+new_value)
+                    file_cache.write('\n'+new_value)
         return conf_file
 
     @classmethod

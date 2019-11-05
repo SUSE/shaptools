@@ -204,8 +204,4 @@ nwUsers.sidAdmUID =
 
 # The password of the '<sapsid>adm' user
 # nwUsers.sidadmPassword =
-
-
-
-
 NW_HDB_getDBInfo.systemPassword = test1234

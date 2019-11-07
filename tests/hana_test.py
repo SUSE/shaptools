@@ -397,9 +397,9 @@ class TestHana(unittest.TestCase):
         ])
 
 
-    @mock.patch('time.clock')
-    def test_register_basic(self, mock_clock):
-        mock_clock.return_value = 0
+    @mock.patch('time.time')
+    def test_register_basic(self, mock_time):
+        mock_time.return_value = 0
         self._hana._run_hana_command = mock.Mock()
         result_mock = mock.Mock(returncode=0)
         self._hana._run_hana_command.return_value = result_mock
@@ -409,9 +409,9 @@ class TestHana(unittest.TestCase):
             '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
             'test', 'host', '01', 'sync', 'ops'), False)
 
-    @mock.patch('time.clock')
-    def test_register_copy_ssfs(self, mock_clock):
-        mock_clock.return_value = 0
+    @mock.patch('time.time')
+    def test_register_copy_ssfs(self, mock_time):
+        mock_time.return_value = 0
         self._hana._run_hana_command = mock.Mock()
         result_mock = mock.Mock(returncode=149)
         self._hana.copy_ssfs_files = mock.Mock()
@@ -429,10 +429,10 @@ class TestHana(unittest.TestCase):
         ])
         self._hana.copy_ssfs_files.assert_called_once_with('host', 'pass')
 
-    @mock.patch('time.clock')
+    @mock.patch('time.time')
     @mock.patch('time.sleep')
-    def test_register_loop(self, mock_sleep, mock_clock):
-        mock_clock.side_effect = [0, 1, 2, 3]
+    def test_register_loop(self, mock_sleep, mock_time):
+        mock_time.side_effect = [0, 1, 2, 3]
         self._hana._run_hana_command = mock.Mock()
         result_mock1 = mock.Mock(returncode=1)
         result_mock2 = mock.Mock(returncode=1)
@@ -458,10 +458,10 @@ class TestHana(unittest.TestCase):
         ])
         mock_sleep.assert_has_calls([mock.call(2), mock.call(2)])
 
-    @mock.patch('time.clock')
+    @mock.patch('time.time')
     @mock.patch('time.sleep')
-    def test_register_error(self, mock_sleep, mock_clock):
-        mock_clock.side_effect = [0, 1, 2, 3]
+    def test_register_error(self, mock_sleep, mock_time):
+        mock_time.side_effect = [0, 1, 2, 3]
         self._hana._run_hana_command = mock.Mock()
         result_mock1 = mock.Mock(returncode=1)
         result_mock2 = mock.Mock(returncode=1)

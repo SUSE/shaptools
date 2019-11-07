@@ -162,7 +162,7 @@ class TestNetweaver(unittest.TestCase):
 
         mock_find_pattern.assert_has_calls([
             mock.call(r'msg_server, MessageServer,.*', 'output'),
-            mock.call(r'enserver, EnqueueServer,', 'output')
+            mock.call(r'enserver, EnqueueServer,.*', 'output')
         ])
 
         mock_find_pattern.reset_mock()
@@ -172,7 +172,7 @@ class TestNetweaver(unittest.TestCase):
 
         mock_find_pattern.assert_has_calls([
             mock.call(r'msg_server, MessageServer,.*', 'output'),
-            mock.call(r'enserver, EnqueueServer,', 'output')
+            mock.call(r'enserver, EnqueueServer,.*', 'output')
         ])
 
     @mock.patch('shaptools.shell.find_pattern')
@@ -184,7 +184,7 @@ class TestNetweaver(unittest.TestCase):
         self.assertTrue(self._netweaver._is_ers_installed(mock_process))
 
         mock_find_pattern.assert_called_once_with(
-            r'enrepserver, EnqueueReplicator.*', 'output')
+            r'enrepserver, EnqueueReplicator,.*', 'output')
 
         mock_find_pattern.reset_mock()
         mock_find_pattern.side_effect = ['']
@@ -192,7 +192,34 @@ class TestNetweaver(unittest.TestCase):
         self.assertFalse(self._netweaver._is_ers_installed(mock_process))
 
         mock_find_pattern.assert_called_once_with(
-            r'enrepserver, EnqueueReplicator.*', 'output')
+            r'enrepserver, EnqueueReplicator,.*', 'output')
+
+    @mock.patch('shaptools.shell.find_pattern')
+    def test_is_app_server_installed(self, mock_find_pattern):
+
+        mock_process = mock.Mock(output='output')
+        mock_find_pattern.side_effect = ['found', 'found', 'found', 'found']
+
+        self.assertTrue(self._netweaver._is_app_server_installed(mock_process))
+
+        mock_find_pattern.assert_has_calls([
+            mock.call(r'disp\+work, Dispatcher,.*', 'output',),
+            mock.call(r'igswd_mt, IGS Watchdog,.*', 'output',),
+            mock.call(r'gwrd, Gateway,.*', 'output',),
+            mock.call(r'icman, ICM,.*', 'output')
+        ])
+
+        mock_find_pattern.reset_mock()
+        mock_find_pattern.side_effect = ['found', 'found', 'found', '']
+
+        self.assertFalse(self._netweaver._is_app_server_installed(mock_process))
+
+        mock_find_pattern.assert_has_calls([
+            mock.call(r'disp\+work, Dispatcher,.*', 'output',),
+            mock.call(r'igswd_mt, IGS Watchdog,.*', 'output',),
+            mock.call(r'gwrd, Gateway,.*', 'output',),
+            mock.call(r'icman, ICM,.*', 'output')
+        ])
 
     def test_is_installed(self):
 
@@ -260,6 +287,35 @@ class TestNetweaver(unittest.TestCase):
             **{'NW_HDB_getDBInfo.systemPassword': 'test1234'})
         self.assertTrue(filecmp.cmp(pwd+'/support/new.inifile.params', conf_file))
 
+    def test_is_installed_app_server(self):
+
+        processes_mock = mock.Mock(returncode=0)
+        self._netweaver.get_process_list = mock.Mock(return_value=processes_mock)
+        self._netweaver._is_app_server_installed = mock.Mock(return_value=True)
+        self.assertTrue(self._netweaver.is_installed('ci'))
+        self._netweaver.get_process_list.assert_called_once_with(False)
+        self._netweaver._is_app_server_installed.assert_called_once_with(processes_mock)
+
+        processes_mock = mock.Mock(returncode=0)
+        self._netweaver.get_process_list = mock.Mock(return_value=processes_mock)
+        self._netweaver._is_app_server_installed = mock.Mock(return_value=True)
+        self.assertTrue(self._netweaver.is_installed('di'))
+        self._netweaver.get_process_list.assert_called_once_with(False)
+        self._netweaver._is_app_server_installed.assert_called_once_with(processes_mock)
+
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_remove_old_files(self, mock_execute_cmd):
+
+        mock_output = mock.Mock(output='file_a /tmp/start_dir.cd file_b')
+        mock_execute_cmd.return_value = mock_output
+
+        netweaver.NetweaverInstance._remove_old_files('/tmp', 'root', 'pass', None)
+
+        mock_execute_cmd.assert_has_calls([
+            mock.call('printf \'%q \' /tmp/*', 'root', 'pass', None),
+            mock.call('rm -rf file_a  file_b', 'root', 'pass', None)
+        ])
+
     @mock.patch('shaptools.shell.execute_cmd')
     def test_install(self, mock_execute_cmd):
 
@@ -271,6 +327,22 @@ class TestNetweaver(unittest.TestCase):
             'SAPINST_EXECUTE_PRODUCT_ID=MYPRODUCT '\
             'SAPINST_SKIP_SUCCESSFULLY_FINISHED_DIALOG=true SAPINST_START_GUISERVER=false '\
             'SAPINST_INPUT_PARAMETERS_URL=/inifile.params'
+        mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass', None)
+
+    @mock.patch('shaptools.netweaver.NetweaverInstance._remove_old_files')
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_install_cwd(self, mock_execute_cmd, mock_remove_old_files):
+
+        result = mock.Mock(returncode=0)
+        mock_execute_cmd.return_value = result
+
+        self._netweaver.install(
+            '/path', 'virtual', 'MYPRODUCT', '/inifile.params', 'root', 'pass', cwd='/tmp')
+        cmd = '/path/sapinst SAPINST_USE_HOSTNAME=virtual '\
+            'SAPINST_EXECUTE_PRODUCT_ID=MYPRODUCT '\
+            'SAPINST_SKIP_SUCCESSFULLY_FINISHED_DIALOG=true SAPINST_START_GUISERVER=false '\
+            'SAPINST_INPUT_PARAMETERS_URL=/inifile.params SAPINST_CWD=/tmp'
+        mock_remove_old_files.assert_called_once_with('/tmp', 'root', 'pass', None)
         mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass', None)
 
     @mock.patch('shaptools.shell.execute_cmd')
@@ -364,49 +436,49 @@ class TestNetweaver(unittest.TestCase):
         mock_start.assert_called_once_with(
             host='ascs_hostname', inst='ascs_inst', user='ha1adm', password='ascs_pass')
 
-    @mock.patch('time.clock')
+    @mock.patch('time.time')
     @mock.patch('shaptools.netweaver.NetweaverInstance.get_attribute_from_file')
     @mock.patch('shaptools.netweaver.NetweaverInstance.install')
     @mock.patch('shaptools.netweaver.NetweaverInstance._ascs_restart_needed')
     @mock.patch('shaptools.netweaver.NetweaverInstance._restart_ascs')
     def test_install_ers_first_install(
             self, mock_restart, mock_restart_needed, mock_install,
-            mock_get_attribute, mock_clock):
+            mock_get_attribute, mock_time):
 
         mock_result = mock.Mock()
         mock_result.group.return_value = 'ers_pass'
         mock_get_attribute.return_value = mock_result
 
-        mock_clock.return_value = 1
+        mock_time.return_value = 1
         mock_install_result = mock.Mock(returncode=111)
         mock_install.return_value = mock_install_result
         mock_restart_needed.return_value = True
 
         netweaver.NetweaverInstance.install_ers(
             'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-            ascs_password='ascs_pass', timeout=5, interval=1)
+            ascs_password='ascs_pass', timeout=5, interval=1, cwd='/tmp')
 
         mock_result.group.assert_called_once_with(1)
         mock_install.assert_called_once_with(
             'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-            exception=False, remote_host=None)
+            exception=False, remote_host=None, cwd='/tmp')
         mock_restart_needed.assert_called_once_with(mock_install_result)
         mock_restart.assert_called_once_with('conf_file', 'ers_pass', 'ascs_pass', None)
 
-    @mock.patch('time.clock')
+    @mock.patch('time.time')
     @mock.patch('shaptools.netweaver.NetweaverInstance.get_attribute_from_file')
     @mock.patch('shaptools.netweaver.NetweaverInstance.install')
     @mock.patch('shaptools.netweaver.NetweaverInstance._ascs_restart_needed')
     @mock.patch('shaptools.netweaver.NetweaverInstance._restart_ascs')
     def test_install_ers_loop_install(
             self, mock_restart, mock_restart_needed, mock_install,
-            mock_get_attribute, mock_sleep, mock_clock):
+            mock_get_attribute, mock_sleep, mock_time):
 
         mock_result = mock.Mock()
         mock_result.group.return_value = 'ers_pass'
         mock_get_attribute.return_value = mock_result
 
-        mock_clock.side_effect = [1, 2, 3, 4, 5]
+        mock_time.side_effect = [1, 2, 3, 4, 5]
         mock_install_result = mock.Mock(returncode=111)
         mock_install.side_effect = [mock_install_result, mock_install_result, mock_install_result]
         mock_restart_needed.side_effect = [False, False, True]
@@ -419,13 +491,13 @@ class TestNetweaver(unittest.TestCase):
         mock_install.assert_has_calls([
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None)
+                exception=False, remote_host=None, cwd=None)
         ])
         mock_restart_needed.assert_has_calls([
             mock.call(mock_install_result),
@@ -433,7 +505,7 @@ class TestNetweaver(unittest.TestCase):
             mock.call(mock_install_result)
         ])
         mock_restart.assert_called_once_with('conf_file', 'ers_pass', 'ers_pass', None)
-        mock_clock.assert_has_calls([
+        mock_time.assert_has_calls([
             mock.call(),
             mock.call(),
             mock.call()
@@ -443,7 +515,7 @@ class TestNetweaver(unittest.TestCase):
             mock.call(1)
         ])
 
-    @mock.patch('time.clock')
+    @mock.patch('time.time')
     @mock.patch('time.sleep')
     @mock.patch('shaptools.netweaver.NetweaverInstance.get_attribute_from_file')
     @mock.patch('shaptools.netweaver.NetweaverInstance.install')
@@ -451,13 +523,13 @@ class TestNetweaver(unittest.TestCase):
     @mock.patch('shaptools.netweaver.NetweaverInstance._restart_ascs')
     def test_install_ers_loop_install(
             self, mock_restart, mock_restart_needed, mock_install,
-            mock_get_attribute, mock_sleep, mock_clock):
+            mock_get_attribute, mock_sleep, mock_time):
 
         mock_result = mock.Mock()
         mock_result.group.return_value = 'ers_pass'
         mock_get_attribute.return_value = mock_result
 
-        mock_clock.side_effect = [1, 2, 3, 4, 5]
+        mock_time.side_effect = [1, 2, 3, 4, 5]
         mock_install_result = mock.Mock(returncode=111)
         mock_install.side_effect = [mock_install_result, mock_install_result, mock_install_result]
         mock_restart_needed.side_effect = [False, False, True]
@@ -470,13 +542,13 @@ class TestNetweaver(unittest.TestCase):
         mock_install.assert_has_calls([
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None)
+                exception=False, remote_host=None, cwd=None)
         ])
         mock_restart_needed.assert_has_calls([
             mock.call(mock_install_result),
@@ -484,27 +556,27 @@ class TestNetweaver(unittest.TestCase):
             mock.call(mock_install_result)
         ])
         mock_restart.assert_called_once_with('conf_file', 'ers_pass', 'ers_pass', None)
-        self.assertEqual(mock_clock.call_count, 3)
+        self.assertEqual(mock_time.call_count, 3)
         self.assertEqual(mock_sleep.call_count, 2)
         mock_sleep.assert_has_calls([
             mock.call(1),
             mock.call(1)
         ])
 
-    @mock.patch('time.clock')
+    @mock.patch('time.time')
     @mock.patch('time.sleep')
     @mock.patch('shaptools.netweaver.NetweaverInstance.get_attribute_from_file')
     @mock.patch('shaptools.netweaver.NetweaverInstance.install')
     @mock.patch('shaptools.netweaver.NetweaverInstance._ascs_restart_needed')
     def test_install_ers_error_install(
             self, mock_restart_needed, mock_install,
-            mock_get_attribute, mock_sleep, mock_clock):
+            mock_get_attribute, mock_sleep, mock_time):
 
         mock_result = mock.Mock()
         mock_result.group.return_value = 'ers_pass'
         mock_get_attribute.return_value = mock_result
 
-        mock_clock.side_effect = [1, 2, 3, 5]
+        mock_time.side_effect = [1, 2, 3, 5]
         mock_install_result = mock.Mock(returncode=111)
         mock_install.side_effect = [mock_install_result, mock_install_result, mock_install_result]
         mock_restart_needed.side_effect = [False, False, False]
@@ -519,20 +591,20 @@ class TestNetweaver(unittest.TestCase):
         mock_install.assert_has_calls([
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None),
+                exception=False, remote_host=None, cwd=None),
             mock.call(
                 'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
-                exception=False, remote_host=None)
+                exception=False, remote_host=None, cwd=None)
         ])
         mock_restart_needed.assert_has_calls([
             mock.call(mock_install_result),
             mock.call(mock_install_result),
             mock.call(mock_install_result)
         ])
-        self.assertEqual(mock_clock.call_count, 4)
+        self.assertEqual(mock_time.call_count, 4)
         self.assertEqual(mock_sleep.call_count, 3)
         mock_sleep.assert_has_calls([
             mock.call(1),

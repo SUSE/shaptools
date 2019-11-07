@@ -83,6 +83,8 @@ class BaseConnector(object):
             port (int): Database port (3{inst_number}15 by default)
             user (str): Existing username in the database
             password (str): User password
+            timeout (int, optional): Connection timeout in seconds (only for pyhdb)
+            properties: Additional properties can be used with named parameters (only for dbapi)
         """
         raise NotImplementedError(
             'method must be implemented in inherited connectors')
@@ -97,6 +99,25 @@ class BaseConnector(object):
     def disconnect(self):
         """
         Disconnect from SAP HANA database
+        """
+        raise NotImplementedError(
+            'method must be implemented in inherited connectors')
+
+    def isconnected(self):
+        """
+        Check the connection status
+
+        INFO: Sometimes the state is not changed unless a query is performed
+
+        Returns:
+            bool: True if connected False otherwise
+        """
+        raise NotImplementedError(
+            'method must be implemented in inherited connectors')
+
+    def reconnect(self):
+        """
+        Reconnect to the previously connected SAP HANA database if the connection is lost
         """
         raise NotImplementedError(
             'method must be implemented in inherited connectors')

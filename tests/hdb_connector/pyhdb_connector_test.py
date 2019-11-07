@@ -23,12 +23,6 @@ except ImportError:
     import mock
 
 
-class PyhdbException(Exception):
-    """
-    pyhdb.exceptions mock exception
-    """
-
-
 class TestHDBConnector(unittest.TestCase):
     """
     Unitary tests for pyhdb_connector.py.
@@ -66,24 +60,43 @@ class TestHDBConnector(unittest.TestCase):
     @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.pyhdb')
     @mock.patch('logging.Logger.info')
     def test_connect(self, mock_logger, mock_pyhdb):
-        self._conn.connect('host', 1234, user='user', password='pass')
+        self._conn.connect('host', 1234, user='user', password='pass', timeout=1)
         mock_pyhdb.connect.assert_called_once_with(
             host='host', port=1234, user='user', password='pass')
         mock_logger.assert_has_calls([
             mock.call('connecting to SAP HANA database at %s:%s', 'host', 1234),
             mock.call('connected successfully')
         ])
+        self.assertEqual(self._conn._connection.timeout, 1)
 
     @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.socket')
     @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.pyhdb')
     @mock.patch('logging.Logger.info')
-    def test_connect_error(self, mock_logger, mock_pyhdb, mock_socket):
-        mock_socket.error = PyhdbException
-        mock_pyhdb.connect.side_effect = mock_socket.error('error')
+    def test_connect_socket_error(self, mock_logger, mock_pyhdb, mock_socket):
+        mock_socket.error = Exception
+        mock_pyhdb.exceptions.DatabaseError = Exception
+        mock_pyhdb.connect.side_effect = mock_socket.error('socket error')
         with self.assertRaises(self._pyhdb_connector.base_connector.ConnectionError) as err:
             self._conn.connect('host', 1234, user='user', password='pass')
 
-        self.assertTrue('connection failed: {}'.format('error') in str(err.exception))
+        self.assertTrue('connection failed: {}'.format('socket error') in str(err.exception))
+        mock_pyhdb.connect.assert_called_once_with(
+            host='host', port=1234, user='user', password='pass')
+
+        mock_logger.assert_called_once_with(
+            'connecting to SAP HANA database at %s:%s', 'host', 1234)
+
+    @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.socket')
+    @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.pyhdb')
+    @mock.patch('logging.Logger.info')
+    def test_connect_pyhdb_error(self, mock_logger, mock_pyhdb, mock_socket):
+        mock_socket.error = Exception
+        mock_pyhdb.exceptions.DatabaseError = Exception
+        mock_pyhdb.connect.side_effect = mock_pyhdb.exceptions.DatabaseError('pyhdb error')
+        with self.assertRaises(self._pyhdb_connector.base_connector.ConnectionError) as err:
+            self._conn.connect('host', 1234, user='user', password='pass')
+
+        self.assertTrue('connection failed: {}'.format('pyhdb error') in str(err.exception))
         mock_pyhdb.connect.assert_called_once_with(
             host='host', port=1234, user='user', password='pass')
 
@@ -116,9 +129,9 @@ class TestHDBConnector(unittest.TestCase):
     @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.pyhdb')
     @mock.patch('logging.Logger.info')
     def test_query_error(self, mock_logger, mock_pyhdb):
-        mock_pyhdb.exceptions.DatabaseError = PyhdbException
+        mock_pyhdb.exceptions.DatabaseError = Exception
         self._conn._connection = mock.Mock()
-        self._conn._connection.cursor.side_effect = PyhdbException('error')
+        self._conn._connection.cursor.side_effect = Exception('error')
         with self.assertRaises(self._pyhdb_connector.base_connector.QueryError) as err:
             self._conn.query('query')
 
@@ -129,12 +142,12 @@ class TestHDBConnector(unittest.TestCase):
     @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.pyhdb')
     @mock.patch('logging.Logger.info')
     def test_query_error_execute(self, mock_logger, mock_pyhdb):
-        mock_pyhdb.exceptions.DatabaseError = PyhdbException
+        mock_pyhdb.exceptions.DatabaseError = Exception
         self._conn._connection = mock.Mock()
         cursor_mock = mock.Mock()
         self._conn._connection.cursor.return_value = cursor_mock
         cursor_mock.execute = mock.Mock()
-        cursor_mock.execute.side_effect = PyhdbException('error')
+        cursor_mock.execute.side_effect = Exception('error')
         with self.assertRaises(self._pyhdb_connector.base_connector.QueryError) as err:
             self._conn.query('query')
 
@@ -152,3 +165,73 @@ class TestHDBConnector(unittest.TestCase):
             mock.call('disconnecting from SAP HANA database'),
             mock.call('disconnected successfully')
         ])
+
+    def test_isconnected_false(self):
+        self._conn._connection = None
+        self.assertFalse(self._conn.isconnected())
+
+        self._conn._connection = mock.Mock()
+        self._conn._connection.isconnected.return_value = False
+        self.assertFalse(self._conn.isconnected())
+
+    @mock.patch('logging.Logger.error')
+    def test_isconnected_error(self, logger):
+        self._conn._connection = mock.Mock()
+        self._conn._connection.isconnected.return_value = True
+        self._conn._connection._socket = mock.Mock()
+        self._conn._connection._socket.getpeername.side_effect = OSError('error')
+
+        self.assertFalse(self._conn.isconnected())
+        logger.assert_called_once_with('socket is not correctly working. closing socket')
+        self.assertEqual(self._conn._connection._socket, None)
+
+    def test_isconnected_correct(self):
+        self._conn._connection = mock.Mock()
+        self._conn._connection.isconnected.return_value = True
+        self._conn._connection._socket = mock.Mock()
+        self._conn._connection._socket.getpeername.return_value = 'data'
+
+        self.assertTrue(self._conn.isconnected())
+
+    def test_reconnect_notconnected(self):
+        self._conn._connection = None
+        with self.assertRaises(self._pyhdb_connector.base_connector.ConnectionError) as err:
+            self._conn.reconnect()
+        self.assertTrue('connect method must be used first to reconnect' in str(err.exception))
+
+    @mock.patch('logging.Logger.info')
+    def test_reconnect_connected(self, logger):
+        self._conn._connection = mock.Mock()
+        self._conn.isconnected = mock.Mock(return_value=True)
+        self._conn.reconnect()
+        logger.assert_called_once_with('connection already created')
+
+    @mock.patch('logging.Logger.info')
+    def test_reconnect(self, logger):
+        self._conn._connection = mock.Mock()
+        self._conn.isconnected = mock.Mock(return_value=False)
+        self._conn.reconnect()
+
+        self._conn._connection.connect.assert_called_once_with()
+        logger.assert_called_once_with('reconnecting...')
+        self.assertEqual(self._conn._connection.session_id, -1)
+        self.assertEqual(self._conn._connection.packet_count, -1)
+
+    @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.socket')
+    @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.pyhdb')
+    @mock.patch('logging.Logger.info')
+    def test_reconnect_connect_error(self, logger, mock_pyhdb, mock_socket):
+        mock_socket.error = Exception
+        mock_pyhdb.exceptions.DatabaseError = Exception
+        self._conn._connection = mock.Mock()
+        self._conn.isconnected = mock.Mock(return_value=False)
+        self._conn._connection.connect.side_effect = mock_socket.error('socket error')
+
+        with self.assertRaises(self._pyhdb_connector.base_connector.ConnectionError) as err:
+            self._conn.reconnect()
+        self.assertTrue('socket error' in str(err.exception))
+
+        self._conn._connection.connect.assert_called_once_with()
+        logger.assert_called_once_with('reconnecting...')
+        self.assertEqual(self._conn._connection.session_id, -1)
+        self.assertEqual(self._conn._connection.packet_count, -1)

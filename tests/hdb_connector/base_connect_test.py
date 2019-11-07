@@ -122,3 +122,17 @@ class TestHana(unittest.TestCase):
             self.assertTrue(
                 'method must be implemented in inherited connectors'
                 in str(err.exception))
+
+    def test_isconnected(self):
+        with self.assertRaises(NotImplementedError) as err:
+            self._conn.isconnected()
+            self.assertTrue(
+                'method must be implemented in inherited connectors'
+                in str(err.exception))
+
+    def test_reconnect(self):
+        with self.assertRaises(NotImplementedError) as err:
+            self._conn.reconnect()
+            self.assertTrue(
+                'method must be implemented in inherited connectors'
+                in str(err.exception))

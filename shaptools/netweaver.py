@@ -8,8 +8,12 @@ SAP Netweaver management module
 :since: 2010-07-30
 """
 
+from __future__ import print_function
+
 import logging
 import time
+import fileinput
+import re
 
 from shaptools import shell
 
@@ -173,6 +177,32 @@ class NetweaverInstance(object):
         remove_files = remove_files.output.replace('{}/start_dir.cd'.format(cwd), '')
         cmd = 'rm -rf {}'.format(remove_files)
         shell.execute_cmd(cmd, root_user, password, remote_host)
+
+    @classmethod
+    def update_conf_file(cls, conf_file, **kwargs):
+        """
+        Update NW installation config file parameters. Add the parameters if they don't exist
+
+        Args:
+            conf_file (str): Path to the netweaver installation configuration file
+            kwargs (opt): Dictionary with the values to be updated.
+                Use the exact name of the netweaver configuration file
+
+        kwargs can be used in the next two modes:
+            update_conf_file(conf_file, sid='HA1', hostname='hacert01')
+            update_conf_file(conf_file, **{'sid': 'HA1', 'hostname': 'hacert01'})
+        """
+        for key, value in kwargs.items():
+            pattern = '{key}\s+=.*'.format(key=key)
+            new_value = '{key} = {value}'.format(key=key, value=value)
+            with open(conf_file, 'r+') as file_cache:
+                if key in file_cache.read():
+                    for line in fileinput.input(conf_file, inplace=1):
+                        line = re.sub(pattern, new_value, line)
+                        print(line, end='')
+                else:
+                    file_cache.write('\n'+new_value)
+        return conf_file
 
     @classmethod
     def install(

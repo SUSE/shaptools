@@ -271,6 +271,22 @@ class TestNetweaver(unittest.TestCase):
         self._netweaver.get_process_list.assert_called_once_with(False)
         self._netweaver._is_ers_installed.assert_called_once_with(processes_mock)
 
+    def test_update_conf_file(self):
+
+        pwd = os.path.dirname(os.path.abspath(__file__))
+        shutil.copyfile(pwd+'/support/original.inifile.params', '/tmp/copy.inifile.params')
+        conf_file = netweaver.NetweaverInstance.update_conf_file(
+            '/tmp/copy.inifile.params', sid='HA1',
+            sidadmPassword='testpwd', masterPwd='Suse1234')
+        self.assertTrue(filecmp.cmp(pwd+'/support/modified.inifile.params', conf_file))
+        
+        #case when new entry is added to config file
+        shutil.copyfile(pwd+'/support/original.inifile.params', '/tmp/copy.inifile.params')
+        conf_file = netweaver.NetweaverInstance.update_conf_file(
+            '/tmp/copy.inifile.params',
+            **{'NW_HDB_getDBInfo.systemPassword': 'test1234'})
+        self.assertTrue(filecmp.cmp(pwd+'/support/new.inifile.params', conf_file))
+
     def test_is_installed_app_server(self):
 
         processes_mock = mock.Mock(returncode=0)

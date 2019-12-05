@@ -279,7 +279,7 @@ class TestNetweaver(unittest.TestCase):
             '/tmp/copy.inifile.params', sid='HA1',
             sidadmPassword='testpwd', masterPwd='Suse1234')
         self.assertTrue(filecmp.cmp(pwd+'/support/modified.inifile.params', conf_file))
-        
+
         #case when new entry is added to config file
         shutil.copyfile(pwd+'/support/original.inifile.params', '/tmp/copy.inifile.params')
         conf_file = netweaver.NetweaverInstance.update_conf_file(
@@ -439,9 +439,31 @@ class TestNetweaver(unittest.TestCase):
     @mock.patch('time.time')
     @mock.patch('shaptools.netweaver.NetweaverInstance.get_attribute_from_file')
     @mock.patch('shaptools.netweaver.NetweaverInstance.install')
+    def test_install_ers(self, mock_install, mock_get_attribute, mock_time):
+
+        mock_result = mock.Mock()
+        mock_result.group.return_value = 'ers_pass'
+        mock_get_attribute.return_value = mock_result
+
+        mock_time.return_value = 1
+        mock_install_result = mock.Mock(returncode=0)
+        mock_install.return_value = mock_install_result
+
+        netweaver.NetweaverInstance.install_ers(
+            'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
+            ascs_password='ascs_pass', timeout=5, interval=1, cwd='/tmp')
+
+        mock_result.group.assert_called_once_with(1)
+        mock_install.assert_called_once_with(
+            'software', 'myhost', 'product', 'conf_file', 'user', 'pass',
+            exception=False, remote_host=None, cwd='/tmp')
+
+    @mock.patch('time.time')
+    @mock.patch('shaptools.netweaver.NetweaverInstance.get_attribute_from_file')
+    @mock.patch('shaptools.netweaver.NetweaverInstance.install')
     @mock.patch('shaptools.netweaver.NetweaverInstance._ascs_restart_needed')
     @mock.patch('shaptools.netweaver.NetweaverInstance._restart_ascs')
-    def test_install_ers_first_install(
+    def test_install_ers_with_restart(
             self, mock_restart, mock_restart_needed, mock_install,
             mock_get_attribute, mock_time):
 

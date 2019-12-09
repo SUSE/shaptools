@@ -329,8 +329,9 @@ class NetweaverInstance(object):
                 software_path, virtual_host, product_id, conf_file, root_user, password,
                 exception=False, remote_host=remote_host, cwd=cwd)
 
-            if result.returncode == cls.SUCCESSFULLY_INSTALLED or \
-                    cls._ascs_restart_needed(result):
+            if result.returncode == cls.SUCCESSFULLY_INSTALLED:
+                break
+            elif cls._ascs_restart_needed(result):
                 cls._restart_ascs(conf_file, ers_pass, ascs_pass, remote_host)
                 break
 

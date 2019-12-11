@@ -19,6 +19,7 @@ import fileinput
 import re
 import time
 import platform
+import os
 
 from shaptools import shell
 
@@ -34,6 +35,10 @@ class HanaError(Exception):
     Error during HANA command execution
     """
 
+class FileDoesNotExist(Exception):
+    """
+    Error when the specified files does not exist
+    """
 
 # System replication states
 # Random value used
@@ -202,6 +207,12 @@ class HanaInstance(object):
         """
         # TODO: mount partition if needed
         # TODO: do some integrity check stuff
+
+        if not os.path.isfile(conf_file):
+            raise FileDoesNotExist('The configuration file does not exist')
+        if hdb_pwd_file is not None and not os.path.isfile(hdb_pwd_file):
+            raise FileDoesNotExist('The XML password file does not exist')
+
         platform_folder = cls.get_platform()
         executable = cls.INSTALL_EXEC.format(software_path=software_path, platform=platform_folder)
         if hdb_pwd_file:

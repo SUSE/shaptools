@@ -205,9 +205,9 @@ class HanaInstance(object):
         platform_folder = cls.get_platform()
         executable = cls.INSTALL_EXEC.format(software_path=software_path, platform=platform_folder)
         if hdb_pwd_file:
-            cmd = ('cat {hdb_pwd_file} | {executable} -b '
-                   '--read_password_from_stdin=xml --configfile={conf_file}'.format(
-                       hdb_pwd_file=hdb_pwd_file, executable=executable, conf_file=conf_file))
+            cmd = 'cat {hdb_pwd_file} | {executable} -b '\
+                '--read_password_from_stdin=xml --configfile={conf_file}'.format(
+                    hdb_pwd_file=hdb_pwd_file, executable=executable, conf_file=conf_file)
         else:
             cmd = '{executable} -b --configfile={conf_file}'.format(
                 executable=executable, conf_file=conf_file)

@@ -286,7 +286,7 @@ class TestHana(unittest.TestCase):
     def test_install_FileDoesNotExistError(self, mock_conf_file):
         mock_conf_file.return_value = False
         
-        with self.assertRaises(hana.FileDoesNotExist) as err:
+        with self.assertRaises(hana.FileDoesNotExistError) as err:
             hana.HanaInstance.install(
                 'software_path', 'conf_file.conf', 'root', 'pass')
 
@@ -297,7 +297,7 @@ class TestHana(unittest.TestCase):
     def test_install_xml_FileDoesNotExistError(self, mock_passwords_xml):
         mock_passwords_xml.side_effect = [True, False]
 
-        with self.assertRaises(hana.FileDoesNotExist) as err:
+        with self.assertRaises(hana.FileDoesNotExistError) as err:
             hana.HanaInstance.install(
                 'software_path', 'conf_file.conf', 'root', 'pass',
                 hdb_pwd_file='hdb_password.xml')

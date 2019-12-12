@@ -35,7 +35,7 @@ class HanaError(Exception):
     Error during HANA command execution
     """
 
-class FileDoesNotExist(Exception):
+class FileDoesNotExistError(Exception):
     """
     Error when the specified files does not exist
     """
@@ -209,9 +209,9 @@ class HanaInstance(object):
         # TODO: do some integrity check stuff
 
         if not os.path.isfile(conf_file):
-            raise FileDoesNotExist('The configuration file \'{}\' does not exist'.format(conf_file))
+            raise FileDoesNotExistError('The configuration file \'{}\' does not exist'.format(conf_file))
         if hdb_pwd_file is not None and not os.path.isfile(hdb_pwd_file):
-            raise FileDoesNotExist('The XML password file \'{}\' does not exist'.format(hdb_pwd_file))
+            raise FileDoesNotExistError('The XML password file \'{}\' does not exist'.format(hdb_pwd_file))
 
         platform_folder = cls.get_platform()
         executable = cls.INSTALL_EXEC.format(software_path=software_path, platform=platform_folder)

@@ -221,9 +221,11 @@ class TestHana(unittest.TestCase):
 
     @mock.patch('shaptools.hana.HanaInstance.get_platform')
     @mock.patch('shaptools.shell.execute_cmd')
-    def test_install(self, mock_execute, mock_get_platform):
+    @mock.patch('os.path.isfile')
+    def test_install(self, mock_conf_file, mock_execute, mock_get_platform):
         proc_mock = mock.Mock()
         proc_mock.returncode = 0
+        mock_conf_file.side_effect = [True, True]
         mock_execute.return_value = proc_mock
         mock_get_platform.return_value = 'my_arch'
 
@@ -238,9 +240,32 @@ class TestHana(unittest.TestCase):
 
     @mock.patch('shaptools.hana.HanaInstance.get_platform')
     @mock.patch('shaptools.shell.execute_cmd')
-    def test_install_error(self, mock_execute, mock_get_platform):
+    @mock.patch('os.path.isfile')
+    def test_install_xml(self, mock_conf_file, mock_execute, mock_get_platform):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+        mock_conf_file.side_effect = [True, True]
+        mock_execute.return_value = proc_mock
+        mock_get_platform.return_value = 'my_arch'
+
+        hana.HanaInstance.install(
+            'software_path', 'conf_file.conf', 'root', 'pass', 
+            hdb_pwd_file='hdb_passwords.xml')
+
+        mock_execute.assert_called_once_with(
+            'cat {hdb_pwd_file} | software_path/DATA_UNITS/HDB_LCM_LINUX_my_arch/hdblcm '\
+            '-b --read_password_from_stdin=xml --configfile={conf_file}'.format(
+                hdb_pwd_file='hdb_passwords.xml', 
+                conf_file='conf_file.conf'), 'root', 'pass', None)
+        mock_get_platform.assert_called_once_with()
+
+    @mock.patch('shaptools.hana.HanaInstance.get_platform')
+    @mock.patch('shaptools.shell.execute_cmd')
+    @mock.patch('os.path.isfile')
+    def test_install_error(self, mock_conf_file, mock_execute, mock_get_platform):
         proc_mock = mock.Mock()
         proc_mock.returncode = 1
+        mock_conf_file.side_effect = [True, True]
         mock_execute.return_value = proc_mock
         mock_get_platform.return_value = 'my_arch'
 
@@ -256,6 +281,29 @@ class TestHana(unittest.TestCase):
 
         self.assertTrue(
             'SAP HANA installation failed' in str(err.exception))
+
+    @mock.patch('os.path.isfile')
+    def test_install_FileDoesNotExistError(self, mock_conf_file):
+        mock_conf_file.return_value = False
+        
+        with self.assertRaises(hana.FileDoesNotExistError) as err:
+            hana.HanaInstance.install(
+                'software_path', 'conf_file.conf', 'root', 'pass')
+
+        self.assertTrue(
+            'The configuration file \'{}\' does not exist'.format('conf_file.conf') in str(err.exception))
+
+    @mock.patch('os.path.isfile')
+    def test_install_xml_FileDoesNotExistError(self, mock_passwords_xml):
+        mock_passwords_xml.side_effect = [True, False]
+
+        with self.assertRaises(hana.FileDoesNotExistError) as err:
+            hana.HanaInstance.install(
+                'software_path', 'conf_file.conf', 'root', 'pass',
+                hdb_pwd_file='hdb_password.xml')
+
+        self.assertTrue(
+            'The XML password file \'{}\' does not exist'.format('hdb_password.xml') in str(err.exception))
 
     @mock.patch('shaptools.shell.execute_cmd')
     def test_uninstall(self, mock_execute):

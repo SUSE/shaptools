@@ -19,6 +19,7 @@ import fileinput
 import re
 import time
 import platform
+import os
 
 from shaptools import shell
 
@@ -34,6 +35,10 @@ class HanaError(Exception):
     Error during HANA command execution
     """
 
+class FileDoesNotExistError(Exception):
+    """
+    Error when the specified files does not exist
+    """
 
 # System replication states
 # Random value used
@@ -186,7 +191,9 @@ class HanaInstance(object):
         return conf_file
 
     @classmethod
-    def install(cls, software_path, conf_file, root_user, password, remote_host=None):
+    def install(
+            cls, software_path, conf_file, root_user, password,
+            hdb_pwd_file=None, remote_host=None):
         """
         Install SAP HANA platform providing a configuration file
 
@@ -195,14 +202,26 @@ class HanaInstance(object):
             conf_file (str): Path to the configuration file
             root_user (str): Root user name
             password (str): Root user password
+            hdb_pwd_file (str, opt): Path to the XML password file
             remote_host (str, opt): Remote host where the command will be executed
         """
         # TODO: mount partition if needed
         # TODO: do some integrity check stuff
+
+        if not os.path.isfile(conf_file):
+            raise FileDoesNotExistError('The configuration file \'{}\' does not exist'.format(conf_file))
+        if hdb_pwd_file is not None and not os.path.isfile(hdb_pwd_file):
+            raise FileDoesNotExistError('The XML password file \'{}\' does not exist'.format(hdb_pwd_file))
+
         platform_folder = cls.get_platform()
         executable = cls.INSTALL_EXEC.format(software_path=software_path, platform=platform_folder)
-        cmd = '{executable} -b --configfile={conf_file}'.format(
-            executable=executable, conf_file=conf_file)
+        if hdb_pwd_file:
+            cmd = 'cat {hdb_pwd_file} | {executable} -b '\
+                '--read_password_from_stdin=xml --configfile={conf_file}'.format(
+                    hdb_pwd_file=hdb_pwd_file, executable=executable, conf_file=conf_file)
+        else:
+            cmd = '{executable} -b --configfile={conf_file}'.format(
+                executable=executable, conf_file=conf_file)
         result = shell.execute_cmd(cmd, root_user, password, remote_host)
         if result.returncode:
             raise HanaError('SAP HANA installation failed')

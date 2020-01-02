@@ -184,7 +184,7 @@ class TestHana(unittest.TestCase):
         shutil.copyfile(pwd+'/support/original.conf.xml', '/tmp/test.conf.xml')
         hdb_pwd_file = hana.HanaInstance.update_hdb_pwd_file(
             '/tmp/test.conf.xml', master_password='Master1234', 
-            sapadm_password = 'Adm1234', system_user_password='Qwerty1234')
+            sapadm_password='Adm1234', system_user_password='Qwerty1234')
         self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf.xml', hdb_pwd_file))
 
     @mock.patch('shaptools.hana.HanaInstance.get_platform')

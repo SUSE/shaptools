@@ -179,6 +179,14 @@ class TestHana(unittest.TestCase):
             **{'sid': 'PRD', 'password': 'Qwerty1234', 'system_user_password': 'Qwerty1234'})
         self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf', conf_file))
 
+    def test_update_hdb_pwd_file(self):
+        pwd = os.path.dirname(os.path.abspath(__file__))
+        shutil.copyfile(pwd+'/support/original.conf.xml', '/tmp/test.conf.xml')
+        hdb_pwd_file = hana.HanaInstance.update_hdb_pwd_file(
+            '/tmp/test.conf.xml', master_password='Master1234', 
+            sapadm_password='Adm1234', system_user_password='Qwerty1234')
+        self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf.xml', hdb_pwd_file))
+
     @mock.patch('shaptools.hana.HanaInstance.get_platform')
     @mock.patch('shaptools.shell.execute_cmd')
     def test_create_conf_file(self, mock_execute, mock_get_platform):

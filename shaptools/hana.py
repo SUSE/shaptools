@@ -167,6 +167,28 @@ class HanaInstance(object):
         return conf_file
 
     @classmethod
+    def update_hdb_pwd_file(cls, hdb_pwd_file, **kwargs):
+        """
+        Update SAP HANA XML passwords
+
+        Args:
+            hdb_pwd_file (str): Path to the XML passwords file
+            kwargs (opt): Dictionary with the values to be updated.
+                Use the exact name of the XML file for the key
+
+        kwargs can be used in the next two modes:
+            update_hdb_pwd_file(hdb_pwd_file, master_password='Test123', sapadm_password='pas11')
+            update_hdb_pwd_file(hdb_pwd_file, **{'master_password': 'Test123', 'sapadm_password': 'pas11'})
+        """
+        for key, value in kwargs.items():
+            pattern = '<{key}>.*'.format(key=key)
+            new_entry = '<{key}><![CDATA[{value}]]></{key}>'.format(key=key, value=value)
+            for line in fileinput.input(hdb_pwd_file, inplace=1):
+                line = re.sub(pattern, new_entry, line)
+                print(line, end='')
+        return hdb_pwd_file
+
+    @classmethod
     def create_conf_file(
             cls, software_path, conf_file, root_user, root_password, remote_host=None):
         """

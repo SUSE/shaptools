@@ -23,6 +23,10 @@ class ShellError(Exception):
     Exceptions in shell module
     """
 
+class FileDoesNotExistError(Exception):
+    """
+    Error when the specified files does not exist
+    """
 
 class ProcessResult:
     """
@@ -187,3 +191,25 @@ def remove_user(user, force=False, root_user=None, root_password=None, remote_ho
         else:
             break
     raise ShellError('error removing user {}'.format(user))
+
+def extract_sapcar_cmd(sar_file, options=None, user=None, password=None, remote_host=None):
+    """
+    Execute SAPCAR command to decompress a SAP CAR or SAR files.
+    If user and password are provided it will be executed with this user.
+
+    Args:
+        sar_file (str): Path to the sar file to be extracted
+        options(str, opt): Additional options to SAPCAR command
+        user (str, opt): User to execute the SAPCAR command
+        password (str, opt): User password
+    """
+    if not os.path.isfile(sar_file):
+        raise FileDoesNotExistError('The SAR file \'{}\' does not exist'.format(sar_file))
+    if options is None:
+        cmd = './SAPCAR -xvf {sar_file}'.format(sar_file=sar_file)
+    else:
+        cmd = './SAPCAR -xvf {sar_file} {options}'.format(sar_file=sar_file, options=options)
+    result = execute_cmd(cmd, user=user, password=password, remote_host=remote_host)
+    if result.returncode:
+        raise ShellError('Error running SAPCAR command')
+    return result

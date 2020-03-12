@@ -416,3 +416,20 @@ class NetweaverInstance(object):
         if exception and result.returncode:
             raise NetweaverError('Error running sapcontrol command: {}'.format(result.cmd))
         return result
+
+    def extract_sap_installer(
+            self, sar_file, options=None, user=None, password=None, remote_host=None):
+        """
+        Execute SAPCAR to decompress SAP SWPM sar file.
+        If user and password are provided it will be executed with this user.
+
+        Args:
+            sar_file (str): Path to the sar file to be extracted
+            options(str, opt): Additional options to SAPCAR command
+            user (str, opt): User to execute the SAPCAR command
+            password (str, opt): User password
+        """
+        result = shell.extract_sapcar_cmd(sar_file, options, user, password, remote_host)
+        if result.returncode:
+            raise NetweaverError('Failed to extract the SAR file: {}'.format(result.cmd))
+        return result

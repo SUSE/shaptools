@@ -708,19 +708,3 @@ class HanaInstance(object):
             file_name=file_name, layer=layer, layer_name=layer_name,
             set_value=False, reconfig=reconfig, key_name=key_name,
             user_name=user_name, user_password=user_password)
-
-    def extract_hdbserver(self, sar_file, options=None, user=None, password=None, remote_host=None):
-        """
-        Execute SAPCAR command to decompress SAP hdbserver sar file.
-        If user and password are provided it will be executed with this user.
-
-        Args:
-            sar_file (str): Path to the sar file to be extracted
-            options(str, opt): Additional options to SAPCAR command
-            user (str, opt): User to execute the SAPCAR command
-            password (str, opt): User password
-        """
-        result = shell.extract_sapcar_cmd(sar_file, options, user, password, remote_host)
-        if result.returncode:
-            raise HanaError('Failed to extract the SAR file: {}'.format(result.cmd))
-        return result

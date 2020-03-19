@@ -73,10 +73,11 @@ class HanaInstance(object):
     """
 
     PATH = '/usr/sap/{sid}/HDB{inst}/'
-    INSTALL_EXEC = '{software_path}/DATA_UNITS/HDB_LCM_LINUX_{platform}/hdblcm'
+    INSTALL_EXEC = '{software_path}/DATA_UNITS/HDB_LCM_{platform}/hdblcm'
     SUPPORTED_PLATFORMS = [
         'x86_64', 'ppc64le'
     ]
+    SUPPORTED_SYSTEMS = ['Linux']
     # SID is usualy written uppercased, but the OS user is always created lower case.
     HANAUSER = '{sid}adm'.lower()
     SYNCMODES = ['sync', 'syncmem', 'async']
@@ -106,7 +107,13 @@ class HanaInstance(object):
         logger.info('current platform is %s', current_platform)
         if current_platform not in cls.SUPPORTED_PLATFORMS:
             raise ValueError('not supported platform: {}'.format(current_platform))
-        return current_platform.upper()
+
+        current_system = platform.system()
+        logger.info('current system is %s', current_system)
+        if current_system not in cls.SUPPORTED_SYSTEMS:
+            raise ValueError('not supported system: {}'.format(current_system))
+
+        return '{}_{}'.format(current_system.upper(), current_platform.upper())
 
     def _run_hana_command(self, cmd, exception=True):
         """

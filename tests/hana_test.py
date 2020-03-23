@@ -78,25 +78,38 @@ class TestHana(unittest.TestCase):
             'provided sid, inst and password parameters must be str type' in
             str(err.exception))
 
+    @mock.patch('platform.system')
     @mock.patch('platform.machine')
-    def test_get_platform(self, mock_machine):
+    def test_get_platform(self, mock_machine, mock_system):
         mock_machine.return_value = 'x86_64'
+        mock_system.return_value = 'Linux'
         machine = hana.HanaInstance.get_platform()
-        self.assertEqual(machine, 'X86_64')
+        self.assertEqual(machine, 'LINUX_X86_64')
         mock_machine.assert_called_once_with()
 
         mock_machine.reset_mock()
         mock_machine.return_value = 'ppc64le'
+        mock_system.return_value = 'Linux'
         machine = hana.HanaInstance.get_platform()
-        self.assertEqual(machine, 'PPC64LE')
+        self.assertEqual(machine, 'LINUX_PPC64LE')
         mock_machine.assert_called_once_with()
 
     @mock.patch('platform.machine')
-    def test_get_platform_error(self, mock_machine):
+    def test_get_platform_machine_error(self, mock_machine):
         mock_machine.return_value = 'ppc64'
         with self.assertRaises(ValueError) as err:
             hana.HanaInstance.get_platform()
         self.assertTrue('not supported platform: {}'.format('ppc64') in str(err.exception))
+        mock_machine.assert_called_once_with()
+
+    @mock.patch('platform.system')
+    @mock.patch('platform.machine')
+    def test_get_platform_system_error(self, mock_machine, mock_system):
+        mock_machine.return_value = 'x86_64'
+        mock_system.return_value = 'Mac'
+        with self.assertRaises(ValueError) as err:
+            hana.HanaInstance.get_platform()
+        self.assertTrue('not supported system: {}'.format('Mac') in str(err.exception))
         mock_machine.assert_called_once_with()
 
     @mock.patch('shaptools.shell.execute_cmd')
@@ -183,7 +196,7 @@ class TestHana(unittest.TestCase):
         pwd = os.path.dirname(os.path.abspath(__file__))
         shutil.copyfile(pwd+'/support/original.conf.xml', '/tmp/test.conf.xml')
         hdb_pwd_file = hana.HanaInstance.update_hdb_pwd_file(
-            '/tmp/test.conf.xml', master_password='Master1234', 
+            '/tmp/test.conf.xml', master_password='Master1234',
             sapadm_password='Adm1234', system_user_password='Qwerty1234')
         self.assertTrue(filecmp.cmp(pwd+'/support/modified.conf.xml', hdb_pwd_file))
 
@@ -193,7 +206,7 @@ class TestHana(unittest.TestCase):
         proc_mock = mock.Mock()
         proc_mock.returncode = 0
         mock_execute.return_value = proc_mock
-        mock_get_platform.return_value = 'my_arch'
+        mock_get_platform.return_value = 'LINUX_my_arch'
 
         conf_file = hana.HanaInstance.create_conf_file(
             'software_path', 'conf_file.conf', 'root', 'pass')
@@ -211,7 +224,7 @@ class TestHana(unittest.TestCase):
         proc_mock = mock.Mock()
         proc_mock.returncode = 1
         mock_execute.return_value = proc_mock
-        mock_get_platform.return_value = 'my_arch'
+        mock_get_platform.return_value = 'LINUX_my_arch'
 
         with self.assertRaises(hana.HanaError) as err:
             hana.HanaInstance.create_conf_file(
@@ -235,7 +248,7 @@ class TestHana(unittest.TestCase):
         proc_mock.returncode = 0
         mock_conf_file.side_effect = [True, True]
         mock_execute.return_value = proc_mock
-        mock_get_platform.return_value = 'my_arch'
+        mock_get_platform.return_value = 'LINUX_my_arch'
 
         hana.HanaInstance.install(
             'software_path', 'conf_file.conf', 'root', 'pass')
@@ -254,16 +267,16 @@ class TestHana(unittest.TestCase):
         proc_mock.returncode = 0
         mock_conf_file.side_effect = [True, True]
         mock_execute.return_value = proc_mock
-        mock_get_platform.return_value = 'my_arch'
+        mock_get_platform.return_value = 'LINUX_my_arch'
 
         hana.HanaInstance.install(
-            'software_path', 'conf_file.conf', 'root', 'pass', 
+            'software_path', 'conf_file.conf', 'root', 'pass',
             hdb_pwd_file='hdb_passwords.xml')
 
         mock_execute.assert_called_once_with(
             'cat {hdb_pwd_file} | software_path/DATA_UNITS/HDB_LCM_LINUX_my_arch/hdblcm '\
             '-b --read_password_from_stdin=xml --configfile={conf_file}'.format(
-                hdb_pwd_file='hdb_passwords.xml', 
+                hdb_pwd_file='hdb_passwords.xml',
                 conf_file='conf_file.conf'), 'root', 'pass', None)
         mock_get_platform.assert_called_once_with()
 
@@ -275,7 +288,7 @@ class TestHana(unittest.TestCase):
         proc_mock.returncode = 1
         mock_conf_file.side_effect = [True, True]
         mock_execute.return_value = proc_mock
-        mock_get_platform.return_value = 'my_arch'
+        mock_get_platform.return_value = 'LINUX_my_arch'
 
         with self.assertRaises(hana.HanaError) as err:
             hana.HanaInstance.install(
@@ -293,7 +306,7 @@ class TestHana(unittest.TestCase):
     @mock.patch('os.path.isfile')
     def test_install_FileDoesNotExistError(self, mock_conf_file):
         mock_conf_file.return_value = False
-        
+
         with self.assertRaises(hana.FileDoesNotExistError) as err:
             hana.HanaInstance.install(
                 'software_path', 'conf_file.conf', 'root', 'pass')

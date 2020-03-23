@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Mar 19 15:31:22 UTC 2020 - Xabier Arbulu <xarbulu@suse.com>
+
+- Create version 0.3.6
+- Change the get_platform method to include the system OS type 
+
+-------------------------------------------------------------------
 Thu Jan  2 21:59:30 UTC 2020 - Simranpal Singh <simranpal.singh@suse.com>
 
 - Create package version 0.3.5
@@ -9,7 +15,7 @@ Thu Jan  2 21:59:30 UTC 2020 - Simranpal Singh <simranpal.singh@suse.com>
 Thu Dec  5 10:48:53 UTC 2019 - Xabier Arbulu <xarbulu@suse.com>
 
 - Create package version 0.3.4
-- Fix ascs restart conditions in ers installation 
+- Fix ascs restart conditions in ers installation
 
 -------------------------------------------------------------------
 Thu Nov  7 00:36:08 UTC 2019 - Simranpal Singh <simranpal.singh@suse.com>
@@ -21,7 +27,7 @@ Thu Nov  7 00:36:08 UTC 2019 - Simranpal Singh <simranpal.singh@suse.com>
 Tue Oct 22 02:41:35 UTC 2019 - Xabier Arbulu <xarbulu@suse.com>
 
 - Create package version 0.3.2
-- Add isconnected and reconnect methods 
+- Add isconnected and reconnect methods
 
 -------------------------------------------------------------------
 Wed Aug  7 12:50:36 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
@@ -29,7 +35,7 @@ Wed Aug  7 12:50:36 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>
 - Add the required code to install SAP Netweaver instances
   * Wrap sapcontrol command usage
   * Install and uninstall SAP instances
-  * Check current installation status 
+  * Check current installation status
 
 -------------------------------------------------------------------
 Tue Jul 23 11:04:25 UTC 2019 - Xabier Arbulu Insausti <xarbulu@suse.com>

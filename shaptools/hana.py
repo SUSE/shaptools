@@ -35,9 +35,14 @@ class HanaError(Exception):
     Error during HANA command execution
     """
 
-class FileDoesNotExistError(Exception):
+class FileDoesNotExistError(HanaError):
     """
     Error when the specified files does not exist
+    """
+
+class HanaSoftwareNotFoundError(HanaError):
+    """
+    HANA installation software not found
     """
 
 # System replication states
@@ -73,7 +78,8 @@ class HanaInstance(object):
     """
 
     PATH = '/usr/sap/{sid}/HDB{inst}/'
-    INSTALL_EXEC = '{software_path}/DATA_UNITS/HDB_LCM_{platform}/hdblcm'
+    INSTALL_EXEC = 'hdblcm'
+    HANA_PLATFORM = '^HDB:HANA:.*:{platform}:.*'
     SUPPORTED_PLATFORMS = [
         'x86_64', 'ppc64le'
     ]
@@ -114,6 +120,50 @@ class HanaInstance(object):
             raise ValueError('not supported system: {}'.format(current_system))
 
         return '{}_{}'.format(current_system.upper(), current_platform.upper())
+
+    @classmethod
+    def find_hana_hdblcm(cls, software_path):
+        """
+        Find a HANA installation executable in a folder (and subfolders)
+
+        Args:
+            software_path (str): Path of a folder where the HANA installation software is
+            available
+        """
+        logger = logging.getLogger('__name__')
+        # hdbclm in the provider folder
+        hdblcm_path = os.path.join(software_path, cls.INSTALL_EXEC)
+        if os.path.exists(hdblcm_path):
+            logger.info('HANA installer found: %s', hdblcm_path)
+            return hdblcm_path
+
+        # HANA platform folder
+        label_file = os.path.join(software_path, 'LABEL.ASC')
+        if os.path.exists(label_file):
+            with open(label_file) as file_ptr:
+                hana_platform = cls.get_platform()
+                hana_pattern = cls.HANA_PLATFORM.format(platform=hana_platform)
+                if re.match(hana_pattern, file_ptr.read()):
+                    hdblcm_path = os.path.join(
+                        software_path, 'DATA_UNITS',
+                        'HDB_LCM_{}'.format(hana_platform), cls.INSTALL_EXEC)
+                    hdbserver_path = os.path.join(
+                        software_path, 'DATA_UNITS',
+                        'HDB_SERVER_{}'.format(hana_platform), cls.INSTALL_EXEC)
+                    if os.path.exists(hdblcm_path):
+                        logger.info('HANA installer found: %s', hdblcm_path)
+                        return hdblcm_path
+                    elif os.path.exists(hdbserver_path):
+                        logger.info('HANA installer found: %s', hdbserver_path)
+                        return hdbserver_path
+
+        # HANA server SAR patch
+        hana_server_path = os.path.join(software_path, 'SAP_HANA_DATABASE', cls.INSTALL_EXEC)
+        if os.path.exists(hana_server_path):
+            logger.info('HANA installer found: %s', hana_server_path)
+            return hana_server_path
+
+        raise HanaSoftwareNotFoundError('HANA installer not found in {}'.format(software_path))
 
     def _run_hana_command(self, cmd, exception=True):
         """
@@ -209,8 +259,7 @@ class HanaInstance(object):
             remote_host (str, opt): Remote host where the command will be executed
 
         """
-        platform_folder = cls.get_platform()
-        executable = cls.INSTALL_EXEC.format(software_path=software_path, platform=platform_folder)
+        executable = cls.find_hana_hdblcm(software_path)
         cmd = '{executable} --action=install '\
             '--dump_configfile_template={conf_file}'.format(
                 executable=executable, conf_file=conf_file)
@@ -238,12 +287,12 @@ class HanaInstance(object):
         # TODO: do some integrity check stuff
 
         if not os.path.isfile(conf_file):
-            raise FileDoesNotExistError('The configuration file \'{}\' does not exist'.format(conf_file))
+            raise FileDoesNotExistError(
+                'The configuration file \'{}\' does not exist'.format(conf_file))
         if hdb_pwd_file is not None and not os.path.isfile(hdb_pwd_file):
-            raise FileDoesNotExistError('The XML password file \'{}\' does not exist'.format(hdb_pwd_file))
-
-        platform_folder = cls.get_platform()
-        executable = cls.INSTALL_EXEC.format(software_path=software_path, platform=platform_folder)
+            raise FileDoesNotExistError(
+                'The XML password file \'{}\' does not exist'.format(hdb_pwd_file))
+        executable = cls.find_hana_hdblcm(software_path)
         if hdb_pwd_file:
             cmd = 'cat {hdb_pwd_file} | {executable} -b '\
                 '--read_password_from_stdin=xml --configfile={conf_file}'.format(

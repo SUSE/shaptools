@@ -9,8 +9,6 @@ Module to utilize SAP Technology components
 """
 #TODO: Add support for other SAPCAR functionalties apart from extraction
 
-from __future__ import print_function
-
 import os
 
 from shaptools import shell
@@ -37,7 +35,7 @@ def extract_sapcar_file(sapcar_exe, sar_file, **kwargs):
         sapcar_exe(str): Path to the SAPCAR executable
         sar_file (str): Path to the sar file to be extracted
         options (str, opt): Additional options to SAPCAR command
-        extract_dir (str, opt): Directory where archive will be extracted. It creates the dir
+        output_dir (str, opt): Directory where archive will be extracted. It creates the dir
             if the path doesn't exist. If it's not set the current dir is used
         user (str, opt): User to execute the SAPCAR command
         password (str, opt): User password
@@ -49,17 +47,17 @@ def extract_sapcar_file(sapcar_exe, sar_file, **kwargs):
         raise FileDoesNotExistError('The SAR file \'{}\' does not exist'.format(sar_file))
 
     options = kwargs.get('options', None)
-    extract_dir = kwargs.get('extract_dir', None)
+    output_dir = kwargs.get('output_dir', None)
     user = kwargs.get('user', None)
     password = kwargs.get('password', None)
     remote_host = kwargs.get('remote_host', None)
 
-    extract_dir_str = '-R {}'.format(extract_dir) if extract_dir else ''
-    options_str = '{}'.format(options) if options else ''
+    output_dir_str = ' -R {}'.format(output_dir) if output_dir else ''
+    options_str = ' {}'.format(options) if options else ''
 
-    cmd = '{sapcar_exe} -xvf {sar_file} {options_str} {extract_dir_str}'.format(
+    cmd = '{sapcar_exe} -xvf {sar_file}{options_str}{output_dir_str}'.format(
         sapcar_exe=sapcar_exe, sar_file=sar_file,
-        options_str=options_str, extract_dir_str=extract_dir_str)
+        options_str=options_str, output_dir_str=output_dir_str)
 
     result = shell.execute_cmd(cmd, user=user, password=password, remote_host=remote_host)
     if result.returncode:

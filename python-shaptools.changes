@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Mar 24 11:29:14 UTC 2020 - Xabier Arbulu <xarbulu@suse.com>
+
+- Create version 0.3.7
+- Improve hana installation software detection to allow more use
+  cases 
+
+-------------------------------------------------------------------
 Thu Mar 19 15:31:22 UTC 2020 - Xabier Arbulu <xarbulu@suse.com>
 
 - Create version 0.3.6

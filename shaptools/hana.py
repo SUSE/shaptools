@@ -79,7 +79,7 @@ class HanaInstance(object):
 
     PATH = '/usr/sap/{sid}/HDB{inst}/'
     INSTALL_EXEC = 'hdblcm'
-    HANA_PLATFORM = '^HDB:HANA:.*:{platform}:SAP HANA PLATFORM EDITION.*'
+    HANA_PLATFORM = '^HDB:HANA:.*:{platform}:.*'
     SUPPORTED_PLATFORMS = [
         'x86_64', 'ppc64le'
     ]

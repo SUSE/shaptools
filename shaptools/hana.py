@@ -130,9 +130,12 @@ class HanaInstance(object):
             software_path (str): Path of a folder where the HANA installation software is
             available
         """
+        logger = logging.getLogger('__name__')
         # hdbclm in the provider folder
-        if os.path.exists(os.path.join(software_path, cls.INSTALL_EXEC)):
-            return os.path.join(software_path, cls.INSTALL_EXEC)
+        hdblcm_path = os.path.join(software_path, cls.INSTALL_EXEC)
+        if os.path.exists(hdblcm_path):
+            logger.info('HANA installer found: %s', hdblcm_path)
+            return hdblcm_path
 
         # HANA platform folder
         label_file = os.path.join(software_path, 'LABEL.ASC')
@@ -148,13 +151,16 @@ class HanaInstance(object):
                         software_path, 'DATA_UNITS',
                         'HDB_SERVER_{}'.format(hana_platform), cls.INSTALL_EXEC)
                     if os.path.exists(hdblcm_path):
+                        logger.info('HANA installer found: %s', hdblcm_path)
                         return hdblcm_path
                     elif os.path.exists(hdbserver_path):
+                        logger.info('HANA installer found: %s', hdbserver_path)
                         return hdbserver_path
 
         # HANA server SAR patch
         hana_server_path = os.path.join(software_path, 'SAP_HANA_DATABASE', cls.INSTALL_EXEC)
         if os.path.exists(hana_server_path):
+            logger.info('HANA installer found: %s', hana_server_path)
             return hana_server_path
 
         raise HanaSoftwareNotFoundError('HANA installer not found in {}'.format(software_path))

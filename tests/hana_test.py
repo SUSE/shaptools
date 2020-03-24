@@ -112,16 +112,19 @@ class TestHana(unittest.TestCase):
         self.assertTrue('not supported system: {}'.format('Mac') in str(err.exception))
         mock_machine.assert_called_once_with()
 
+    @mock.patch('logging.Logger.info')
     @mock.patch('os.path.exists')
-    def test_find_hana_hdblcm(self, mock_exists):
+    def test_find_hana_hdblcm(self, mock_exists, mock_info):
         mock_exists.return_value = True
         hdblcm = hana.HanaInstance.find_hana_hdblcm('software_path')
         assert hdblcm == 'software_path/hdblcm'
         mock_exists.assert_called_once_with('software_path/hdblcm')
+        mock_info.assert_called_once_with('HANA installer found: %s', 'software_path/hdblcm')
 
+    @mock.patch('logging.Logger.info')
     @mock.patch('shaptools.hana.HanaInstance.get_platform')
     @mock.patch('os.path.exists')
-    def test_find_hana_hdblcm_units_lcm(self, mock_exists, mock_get_platform):
+    def test_find_hana_hdblcm_units_lcm(self, mock_exists, mock_get_platform, mock_info):
         mock_exists.side_effect = [False, True, True]
         mock_get_platform.return_value = 'LINUX_X86_64'
 
@@ -136,10 +139,13 @@ class TestHana(unittest.TestCase):
             mock.call('software_path/LABEL.ASC'),
             mock.call('software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm')
         ])
+        mock_info.assert_called_once_with(
+            'HANA installer found: %s', 'software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm')
 
+    @mock.patch('logging.Logger.info')
     @mock.patch('shaptools.hana.HanaInstance.get_platform')
     @mock.patch('os.path.exists')
-    def test_find_hana_hdblcm_units_server(self, mock_exists, mock_get_platform):
+    def test_find_hana_hdblcm_units_server(self, mock_exists, mock_get_platform, mock_info):
         mock_exists.side_effect = [False, True, False, True]
         mock_get_platform.return_value = 'LINUX_X86_64'
 
@@ -155,9 +161,12 @@ class TestHana(unittest.TestCase):
             mock.call('software_path/DATA_UNITS/HDB_LCM_LINUX_X86_64/hdblcm'),
             mock.call('software_path/DATA_UNITS/HDB_SERVER_LINUX_X86_64/hdblcm')
         ])
+        mock_info.assert_called_once_with(
+            'HANA installer found: %s', 'software_path/DATA_UNITS/HDB_SERVER_LINUX_X86_64/hdblcm')
 
+    @mock.patch('logging.Logger.info')
     @mock.patch('os.path.exists')
-    def test_find_hana_hdblcm_extracted(self, mock_exists):
+    def test_find_hana_hdblcm_extracted(self, mock_exists, mock_info):
         mock_exists.side_effect = [False, False, True]
 
         hdblcm = hana.HanaInstance.find_hana_hdblcm('software_path')
@@ -168,6 +177,8 @@ class TestHana(unittest.TestCase):
             mock.call('software_path/LABEL.ASC'),
             mock.call('software_path/SAP_HANA_DATABASE/hdblcm')
         ])
+        mock_info.assert_called_once_with(
+            'HANA installer found: %s', 'software_path/SAP_HANA_DATABASE/hdblcm')
 
     @mock.patch('os.path.exists')
     def test_find_hana_hdblcm_error(self, mock_exists):

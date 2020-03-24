@@ -35,7 +35,7 @@ class HanaError(Exception):
     Error during HANA command execution
     """
 
-class FileDoesNotExistError(Exception):
+class FileDoesNotExistError(HanaError):
     """
     Error when the specified files does not exist
     """

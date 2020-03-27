@@ -65,9 +65,10 @@ class TestSapUtils(unittest.TestCase):
         mock_execute_cmd.return_value = proc_mock
 
         result = saputils.extract_sapcar_file(
-            sapcar_exe='/sapmedia/sapcar.exe', sar_file='/sapmedia/IMDB_SERVER_LINUX.SAR')
+            sapcar_exe='/sapmedia/sapcar.exe', sar_file='/sapmedia/IMDB_SERVER_LINUX.SAR',
+            output_dir='/sapmedia/HANA', options='-v')
         
-        cmd = '/sapmedia/sapcar.exe -xvf /sapmedia/IMDB_SERVER_LINUX.SAR'
+        cmd = '/sapmedia/sapcar.exe -xvf /sapmedia/IMDB_SERVER_LINUX.SAR -v -R /sapmedia/HANA'
         mock_execute_cmd.assert_called_once_with(cmd, user=None, password=None, remote_host=None)
         self.assertEqual(proc_mock, result)
 

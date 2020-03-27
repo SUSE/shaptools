@@ -20,7 +20,7 @@ class SapUtilsError(Exception):
     """
 
 
-class FileDoesNotExistError(Exception):
+class FileDoesNotExistError(SapUtilsError):
     """
     Error when the specified files does not exist
     """

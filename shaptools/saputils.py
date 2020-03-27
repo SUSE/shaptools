@@ -42,7 +42,7 @@ def extract_sapcar_file(sapcar_exe, sar_file, **kwargs):
         remote_host (str, opt): Remote host where the command will be executed
     """
     if not os.path.isfile(sapcar_exe):
-        raise FileDoesNotExistError('SAPCAR executable \'{}\' does not exist'.format({sapcar_exe}))
+        raise FileDoesNotExistError('SAPCAR executable \'{}\' does not exist'.format(sapcar_exe))
     if not os.path.isfile(sar_file):
         raise FileDoesNotExistError('The SAR file \'{}\' does not exist'.format(sar_file))
 

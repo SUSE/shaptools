@@ -16,8 +16,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import logging
 import unittest
-import filecmp
-import shutil
 
 try:
     from unittest import mock

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Mar 27 18:15:37 UTC 2020 - Simranpal Singh <simranpal.singh@suse.com>
+
+- Create version 0.3.8
+- Add functionality to extract SAP sar files using SAPCAR tool
+
+-------------------------------------------------------------------
 Tue Mar 24 11:29:14 UTC 2020 - Xabier Arbulu <xarbulu@suse.com>
 
 - Create version 0.3.7

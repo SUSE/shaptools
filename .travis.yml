@@ -46,7 +46,7 @@ jobs:
       script:
         - |
           docker run -t -v "$(pwd):/package" -w /package \
-          -e OBS_USER -e OBS_PASS=$OBS_PASS -e FOLDER -e OBS_PROJECT -e PACKAGE_NAME -e TAR_NAME=$TAR_NAME \
+          -e OBS_USER -e OBS_PASS -e FOLDER -e OBS_PROJECT -e PACKAGE_NAME -e TAR_NAME \
           shap/continuous_deliver \
           /bin/bash -c "sed -i 's~%%VERSION%%~$TRAVIS_COMMIT~' _service && \
           sed -i 's~%%REPOSITORY%%~$TRAVIS_REPO_SLUG~' _service && \
@@ -63,6 +63,6 @@ jobs:
       script:
         - |
           docker run -t -v "$(pwd):/package" -w /package \
-          -e OBS_USER -e OBS_PASS=$OBS_PASS -e FOLDER -e OBS_PROJECT -e PACKAGE_NAME -e TAR_NAME=$TAR_NAME \
+          -e OBS_USER -e OBS_PASS -e FOLDER -e OBS_PROJECT -e PACKAGE_NAME -e TARGET_PROJECT \
           shap/continuous_deliver \
           /scripts/submit.sh

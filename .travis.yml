@@ -18,7 +18,7 @@ jobs:
           - pip install tox
       script:
           - tox
-          
+
     - stage: test
       python: 3.6
       env: TOXENV=py36-codeclimate
@@ -35,9 +35,8 @@ jobs:
           - ./cc-test-reporter after-build -t coverage.py --exit-code $TRAVIS_TEST_RESULT tests/coverage.xml
 
     - stage: delivery
-      if: type != pull_request
+      if: (type != pull_request AND (branch = master or env(DELIVER_BRANCHES))) or tag IS present
       env:
-        - FOLDER=/package
         - PACKAGE_NAME=python-shaptools
         - TAR_NAME=shaptools
 
@@ -46,18 +45,15 @@ jobs:
 
       script:
         - |
-          docker run -t -v "$(pwd):/package" \
-          -e OBS_USER=$OBS_USER \
-          -e OBS_PASS=$OBS_PASS \
-          -e FOLDER=$FOLDER \
-          -e OBS_PROJECT=$OBS_PROJECT \
-          -e PACKAGE_NAME=$PACKAGE_NAME \
-          -e TAR_NAME=$TAR_NAME \
+          docker run -t -v "$(pwd):/package" -w /package \
+          -e OBS_USER -e OBS_PASS=$OBS_PASS -e FOLDER -e OBS_PROJECT -e PACKAGE_NAME -e TAR_NAME=$TAR_NAME \
           shap/continuous_deliver \
-          /bin/bash -c "cd /package;/scripts/upload.sh"
+          /bin/bash -c "sed -i 's~%%VERSION%%~$TRAVIS_COMMIT~' _service && \
+          sed -i 's~%%REPOSITORY%%~$TRAVIS_REPO_SLUG~' _service && \
+          /scripts/upload.sh"
 
     - stage: submit
-      if: type != pull_request AND branch = master
+      if: tag IS present
       env:
         - PACKAGE_NAME=python-shaptools
 
@@ -66,11 +62,7 @@ jobs:
 
       script:
         - |
-          docker run -t -v "$(pwd):/package" \
-          -e OBS_USER=$OBS_USER \
-          -e OBS_PASS=$OBS_PASS \
-          -e OBS_PROJECT=$OBS_PROJECT \
-          -e PACKAGE_NAME=$PACKAGE_NAME \
-          -e TARGET_PROJECT=$TARGET_PROJECT \
+          docker run -t -v "$(pwd):/package" -w /package \
+          -e OBS_USER -e OBS_PASS=$OBS_PASS -e FOLDER -e OBS_PROJECT -e PACKAGE_NAME -e TAR_NAME=$TAR_NAME \
           shap/continuous_deliver \
-          /bin/bash -c "cd /package;/scripts/submit.sh"
+          /scripts/submit.sh

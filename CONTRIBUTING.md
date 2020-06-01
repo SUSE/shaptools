@@ -1,18 +1,12 @@
 # How to contribute
 
-To contribute to the project follow the next steps:
+## OBS Releases
 
-1. Fork the upstream project
-2. Create a new branch from **master**. Set meaningful name
-3. Add the new features
-4. Create/Update the unittary tests
-5. Make sure the CI pipelines are working
-  - Travis CI for the unitary tests
-  - Coveralls for the code coverage
-  - Code climate for the code analysis
-6. Create a pull request (all of the previous steps shall be checked)
+The CI will automatically interact with SUSE's [Open Build Service](https://build.opensuse.org): the master branch will be kept in sync with the `network:ha-clustering:sap-deployments:devel` project (the development upstream), while a new Submit Request against the `openSUSE:Factory` project (the stable downstream) can be triggered by publishing a new GitHub release or pushing a new Git tag.
 
-# Releasing
+When releasing to `openSUSE:Factory`, please ensure that tags always follow the [SemVer](https://semver.org/) scheme, and that [the changelog](python-shaptools.changes) contains a new entry, otherwise the request submission might fail.
 
-When the new release is planned, all the accepted pull requests shall be merged,
-the version number updated and the new code released.
+#### Note to maintainers
+
+The OBS projects can be changed via various environment variables like `OBS_PROJECT` and `TARGET_PROJECT` in the Travis settings.
+You can enable the OBS delivery for feature branches in your own fork by setting the variable `DELIVER_BRANCHES` to a non-empty value.

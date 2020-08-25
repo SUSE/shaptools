@@ -481,8 +481,7 @@ class HanaInstance(object):
                 break
             elif return_code == self.SSFS_DIFFERENT_ERROR:
                 self.copy_ssfs_files(remote_host, primary_pass)
-                self._run_hana_command(cmd)
-                break
+                continue
             time.sleep(interval)
             current_time = time.time()
             continue

@@ -565,9 +565,10 @@ class TestHana(unittest.TestCase):
     def test_register_copy_ssfs(self, mock_time):
         mock_time.return_value = 0
         self._hana._run_hana_command = mock.Mock()
-        result_mock = mock.Mock(returncode=149)
+        result_error = mock.Mock(returncode=149)
+        result_good = mock.Mock(returncode=0)
         self._hana.copy_ssfs_files = mock.Mock()
-        self._hana._run_hana_command.return_value = result_mock
+        self._hana._run_hana_command.side_effect = [result_error, result_good]
         self._hana.sr_register_secondary('test', 'host', 1, 'sync', 'ops', primary_pass='pass')
         self._hana._run_hana_command.assert_has_calls([
             mock.call(
@@ -577,7 +578,7 @@ class TestHana(unittest.TestCase):
             mock.call(
                 'hdbnsutil -sr_register --name={} --remoteHost={} '\
                 '--remoteInstance={} --replicationMode={} --operationMode={}'.format(
-                'test', 'host', '01', 'sync', 'ops'))
+                'test', 'host', '01', 'sync', 'ops'), False)
         ])
         self._hana.copy_ssfs_files.assert_called_once_with('host', 'pass')
 

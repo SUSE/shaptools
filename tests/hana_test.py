@@ -481,13 +481,19 @@ class TestHana(unittest.TestCase):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
         self._hana.start()
-        mock_command.assert_called_once_with('HDB start')
+        mock_command.assert_has_calls([
+            mock.call('sapcontrol -nr {} -function StartSystem HDB'.format(self._hana.inst)),
+            mock.call('sapcontrol -nr {} -function WaitforStarted 2700 2'.format(self._hana.inst))
+        ])
 
     def test_stop(self):
         mock_command = mock.Mock()
         self._hana._run_hana_command = mock_command
         self._hana.stop()
-        mock_command.assert_called_once_with('HDB stop')
+        mock_command.assert_has_calls([
+            mock.call('sapcontrol -nr {} -function StopSystem HDB'.format(self._hana.inst)),
+            mock.call('sapcontrol -nr {} -function WaitforStopped 2700 2'.format(self._hana.inst))
+        ])
 
     @mock.patch('shaptools.shell.find_pattern', mock.Mock(return_value=object()))
     def test_get_sr_state_primary(self):

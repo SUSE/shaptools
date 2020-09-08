@@ -243,7 +243,7 @@ class NetweaverInstance(object):
                 cwd=' SAPINST_CWD={}'.format(cwd) if cwd else '')
         result = shell.execute_cmd(cmd, root_user, password, remote_host)
         if result.returncode and raise_exception:
-            raise NetweaverError('SAP Netweaver installation failed')
+            raise NetweaverError('SAP Netweaver installation failed. Please check logs /tmp/swpm_unattended')
         return result
 
     @classmethod

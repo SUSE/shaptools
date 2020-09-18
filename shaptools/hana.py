@@ -342,16 +342,32 @@ class HanaInstance(object):
 
     def start(self):
         """
-        Start hana instance
+        Start hana instance.
+
+        Info: 'HDB start' is not used, as this command only operates in the local machine and
+        it does not start machines in other host. The used timeout and delay values are the same
+        used by 'HDB start'
         """
-        cmd = 'HDB start'
+        timeout = 2700
+        delay = 2
+        cmd = 'sapcontrol -nr {} -function StartSystem HDB'.format(self.inst)
+        self._run_hana_command(cmd)
+        cmd = 'sapcontrol -nr {} -function WaitforStarted {} {}'.format(self.inst, timeout, delay)
         self._run_hana_command(cmd)
 
     def stop(self):
         """
-        Stop hana instance
+        Stop hana instance.
+
+        Info: 'HDB stop' is not used, as this command only operates in the local machine and
+        it does not stop machines in other host. The used timeout and delay values are the same
+        used by 'HDB start'
         """
-        cmd = 'HDB stop'
+        timeout = 2700
+        delay = 2
+        cmd = 'sapcontrol -nr {} -function StopSystem HDB'.format(self.inst)
+        self._run_hana_command(cmd)
+        cmd = 'sapcontrol -nr {} -function WaitforStopped {} {}'.format(self.inst, timeout, delay)
         self._run_hana_command(cmd)
 
     def get_sr_state(self):

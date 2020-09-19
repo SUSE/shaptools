@@ -361,7 +361,10 @@ class TestNetweaver(unittest.TestCase):
             'SAPINST_SKIP_SUCCESSFULLY_FINISHED_DIALOG=true SAPINST_START_GUISERVER=false '\
             'SAPINST_INPUT_PARAMETERS_URL=/inifile.params'
         mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass', 'remote')
-        self.assertTrue('SAP Netweaver installation failed' in str(err.exception))
+        print(str(err.exception))
+        self.assertTrue('SAP Netweaver installation failed. Please check swpm installation logs(sapinst_dev.log and sapinst.log)' \
+                        ' located at /tmp/sapinst_instdir default folder for further information' in str(err.exception))
+                
 
     @mock.patch('shaptools.netweaver.shell.find_pattern')
     def test_ascs_restart_needed(self, mock_find_pattern):

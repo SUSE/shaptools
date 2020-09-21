@@ -245,13 +245,15 @@ class NetweaverInstance(object):
         if result.returncode and raise_exception:
             if cwd:
                 raise NetweaverError(
-                     "SAP Netweaver installation failed. Please check swpm installation logs"\
-                     "(sapinst_dev.log and sapinst.log) located at {0} for further information".format(cwd))
+                    'SAP Netweaver installation failed. Please check swpm installation logs'\
+                    '(sapinst_dev.log and sapinst.log) located at {0} for further '\
+                    'information'.format(cwd))
             else:
-                raise NetweaverError('SAP Netweaver installation failed.'\
-                                     ' Please check swpm installation logs'\
-                                     '(sapinst_dev.log and sapinst.log) located at'\
-                                     ' /tmp/sapinst_instdir default folder for further information')
+                raise NetweaverError(
+                    'SAP Netweaver installation failed.'\
+                    ' Please check swpm installation logs'\
+                    '(sapinst_dev.log and sapinst.log) located at'\
+                    ' /tmp/sapinst_instdir default folder for further information')
         return result
 
     @classmethod

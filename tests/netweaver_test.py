@@ -345,6 +345,33 @@ class TestNetweaver(unittest.TestCase):
         mock_remove_old_files.assert_called_once_with('/tmp', 'root', 'pass', None)
         mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass', None)
 
+    @mock.patch('shaptools.netweaver.NetweaverInstance._remove_old_files')
+    @mock.patch('shaptools.shell.execute_cmd')
+    def test_install_error_cwd(self, mock_execute_cmd, mock_remove_old_files):
+
+        result = mock.Mock(returncode=1)
+        mock_execute_cmd.return_value = result
+
+        with self.assertRaises(netweaver.NetweaverError) as err:
+            self._netweaver.install(
+                '/path', 'virtual', 'MYPRODUCT', '/inifile.params', 'root', 'pass',
+                remote_host='remote', cwd='/tmp/swpm_unnattended')
+
+        mock_remove_old_files.assert_called_once_with(
+            '/tmp/swpm_unnattended', 'root', 'pass', 'remote')
+
+        cmd = '/path/sapinst SAPINST_USE_HOSTNAME=virtual '\
+            'SAPINST_EXECUTE_PRODUCT_ID=MYPRODUCT '\
+            'SAPINST_SKIP_SUCCESSFULLY_FINISHED_DIALOG=true SAPINST_START_GUISERVER=false '\
+            'SAPINST_INPUT_PARAMETERS_URL=/inifile.params SAPINST_CWD=/tmp/swpm_unnattended'
+
+        mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass', 'remote')
+
+        self.assertTrue(
+            'SAP Netweaver installation failed. Please check swpm installation '\
+            'logs(sapinst_dev.log and sapinst.log) located at /tmp/swpm_unnattended for further '\
+            'information' in str(err.exception))
+
     @mock.patch('shaptools.shell.execute_cmd')
     def test_install_error(self, mock_execute_cmd):
 
@@ -361,10 +388,11 @@ class TestNetweaver(unittest.TestCase):
             'SAPINST_SKIP_SUCCESSFULLY_FINISHED_DIALOG=true SAPINST_START_GUISERVER=false '\
             'SAPINST_INPUT_PARAMETERS_URL=/inifile.params'
         mock_execute_cmd.assert_called_once_with(cmd, 'root', 'pass', 'remote')
-        print(str(err.exception))
-        self.assertTrue('SAP Netweaver installation failed. Please check swpm installation logs(sapinst_dev.log and sapinst.log)' \
-                        ' located at /tmp/sapinst_instdir default folder for further information' in str(err.exception))
-                
+        self.assertTrue(
+            'SAP Netweaver installation failed. Please check swpm installation '\
+            'logs(sapinst_dev.log and sapinst.log) located at /tmp/sapinst_instdir default '\
+            'folder for further information' in str(err.exception))
+
 
     @mock.patch('shaptools.netweaver.shell.find_pattern')
     def test_ascs_restart_needed(self, mock_find_pattern):

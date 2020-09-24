@@ -330,6 +330,91 @@ class TestNetweaver(unittest.TestCase):
         self._netweaver.get_process_list.assert_called_once_with(False)
         self._netweaver._is_app_server_installed.assert_called_once_with(processes_mock)
 
+    @mock.patch('shaptools.shell.find_pattern')
+    def test_get_ascs_ensa_version_ensa1(self, mock_find_pattern):
+        processes = mock.Mock(output='output')
+        mock_find_pattern.side_effect = [True, False]
+        version = self._netweaver._get_ascs_ensa_version(processes)
+        self.assertTrue(version, 1)
+        mock_find_pattern.assert_called_once_with(r'enserver, EnqueueServer,.*', 'output')
+
+    @mock.patch('shaptools.shell.find_pattern')
+    def test_get_ascs_ensa_version_ensa2(self, mock_find_pattern):
+        processes = mock.Mock(output='output')
+        mock_find_pattern.side_effect = [False, True]
+        version = self._netweaver._get_ascs_ensa_version(processes)
+        self.assertTrue(version, 2)
+        mock_find_pattern.assert_has_calls([
+            mock.call(r'enserver, EnqueueServer,.*', 'output'),
+            mock.call(r'enq_server, Enqueue Server 2,.*', 'output')
+        ])
+
+    @mock.patch('shaptools.shell.find_pattern')
+    def test_get_ascs_ensa_version_error(self, mock_find_pattern):
+        processes = mock.Mock(output='output')
+        mock_find_pattern.side_effect = [False, False]
+        with self.assertRaises(ValueError) as err:
+            self._netweaver._get_ascs_ensa_version(processes)
+        self.assertTrue('ASCS not installed or found' in str(err.exception))
+        mock_find_pattern.assert_has_calls([
+            mock.call(r'enserver, EnqueueServer,.*', 'output'),
+            mock.call(r'enq_server, Enqueue Server 2,.*', 'output')
+        ])
+
+    @mock.patch('shaptools.shell.find_pattern')
+    def test_get_ers_ensa_version_ensa1(self, mock_find_pattern):
+        processes = mock.Mock(output='output')
+        mock_find_pattern.side_effect = [True, False]
+        version = self._netweaver._get_ers_ensa_version(processes)
+        self.assertTrue(version, 1)
+        mock_find_pattern.assert_called_once_with(r'enrepserver, EnqueueReplicator,.*', 'output')
+
+    @mock.patch('shaptools.shell.find_pattern')
+    def test_get_ers_ensa_version_ensa2(self, mock_find_pattern):
+        processes = mock.Mock(output='output')
+        mock_find_pattern.side_effect = [False, True]
+        version = self._netweaver._get_ers_ensa_version(processes)
+        self.assertTrue(version, 2)
+        mock_find_pattern.assert_has_calls([
+            mock.call(r'enrepserver, EnqueueReplicator,.*', 'output'),
+            mock.call(r'enq_replicator, Enqueue Replicator 2,.*', 'output')
+        ])
+
+    @mock.patch('shaptools.shell.find_pattern')
+    def test_get_ers_ensa_version_error(self, mock_find_pattern):
+        processes = mock.Mock(output='output')
+        mock_find_pattern.side_effect = [False, False]
+        with self.assertRaises(ValueError) as err:
+            self._netweaver._get_ers_ensa_version(processes)
+        self.assertTrue('ERS not installed or found' in str(err.exception))
+        mock_find_pattern.assert_has_calls([
+            mock.call(r'enrepserver, EnqueueReplicator,.*', 'output'),
+            mock.call(r'enq_replicator, Enqueue Replicator 2,.*', 'output')
+        ])
+
+    def test_get_ensa_version_ascs(self):
+        self._netweaver.get_process_list = mock.Mock(return_value='output')
+        self._netweaver._get_ascs_ensa_version = mock.Mock(return_value=1)
+        version = self._netweaver.get_ensa_version('ascs')
+        self.assertTrue(version, 1)
+        self._netweaver.get_process_list.assert_called_once_with(False)
+        self._netweaver._get_ascs_ensa_version.assert_called_once_with('output')
+
+    def test_get_ensa_version_ers(self):
+        self._netweaver.get_process_list = mock.Mock(return_value='output')
+        self._netweaver._get_ers_ensa_version = mock.Mock(return_value=1)
+        version = self._netweaver.get_ensa_version('ers')
+        self.assertTrue(version, 1)
+        self._netweaver.get_process_list.assert_called_once_with(False)
+        self._netweaver._get_ers_ensa_version.assert_called_once_with('output')
+
+    def test_get_ensa_version_error(self):
+        self._netweaver.get_process_list = mock.Mock(return_value='output')
+        with self.assertRaises(ValueError) as err:
+            self._netweaver.get_ensa_version('other')
+        self.assertTrue('provided sap instance type is not valid: other' in str(err.exception))
+        self._netweaver.get_process_list.assert_called_once_with(False)
+
     @mock.patch('shaptools.shell.execute_cmd')
     def test_remove_old_files(self, mock_execute_cmd):
 

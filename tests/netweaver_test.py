@@ -397,7 +397,7 @@ class TestNetweaver(unittest.TestCase):
         self._netweaver._get_ascs_ensa_version = mock.Mock(return_value=1)
         version = self._netweaver.get_ensa_version('ascs')
         self.assertTrue(version, 1)
-        self._netweaver.get_process_list.assert_called_once_with(False)
+        self._netweaver.get_process_list.assert_called_once_with(exception=True)
         self._netweaver._get_ascs_ensa_version.assert_called_once_with('output')
 
     def test_get_ensa_version_ers(self):
@@ -405,7 +405,7 @@ class TestNetweaver(unittest.TestCase):
         self._netweaver._get_ers_ensa_version = mock.Mock(return_value=1)
         version = self._netweaver.get_ensa_version('ers')
         self.assertTrue(version, 1)
-        self._netweaver.get_process_list.assert_called_once_with(False)
+        self._netweaver.get_process_list.assert_called_once_with(exception=True)
         self._netweaver._get_ers_ensa_version.assert_called_once_with('output')
 
     def test_get_ensa_version_error(self):
@@ -413,7 +413,7 @@ class TestNetweaver(unittest.TestCase):
         with self.assertRaises(ValueError) as err:
             self._netweaver.get_ensa_version('other')
         self.assertTrue('provided sap instance type is not valid: other' in str(err.exception))
-        self._netweaver.get_process_list.assert_called_once_with(False)
+        self._netweaver.get_process_list.assert_called_once_with(exception=True)
 
     @mock.patch('shaptools.shell.execute_cmd')
     def test_remove_old_files(self, mock_execute_cmd):

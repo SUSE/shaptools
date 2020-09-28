@@ -205,7 +205,7 @@ class NetweaverInstance(object):
             ValueError: ENSA system is not installed or found properly
         """
 
-        processes = self.get_process_list(False)
+        processes = self.get_process_list(exception=True)
         if sap_instance == 'ascs':
             return self._get_ascs_ensa_version(processes)
         elif sap_instance == 'ers':

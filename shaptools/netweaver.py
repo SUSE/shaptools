@@ -116,16 +116,20 @@ class NetweaverInstance(object):
         Check if ASCS instance is installed
         """
         msg_server = shell.find_pattern(r'msg_server, MessageServer,.*', processes.output)
-        enserver = shell.find_pattern(r'enserver, EnqueueServer,.*', processes.output)
-        return bool(msg_server and enserver)
+        enserver_ensa1 = shell.find_pattern(r'enserver, EnqueueServer,.*', processes.output)
+        enq_server_ensa2 = shell.find_pattern(r'enq_server, Enqueue Server 2,.*', processes.output)
+        return bool(msg_server and (enserver_ensa1 or enq_server_ensa2))
 
     @staticmethod
     def _is_ers_installed(processes):
         """
         Check if ERS instance is installed
         """
-        enrepserver = shell.find_pattern(r'enrepserver, EnqueueReplicator,.*', processes.output)
-        return bool(enrepserver)
+        enrepserver_ensa1 = shell.find_pattern(
+            r'enrepserver, EnqueueReplicator,.*', processes.output)
+        enq_replicator_ensa2 = shell.find_pattern(
+            r'enq_replicator, Enqueue Replicator 2,.*', processes.output)
+        return bool(enrepserver_ensa1 or enq_replicator_ensa2)
 
     @staticmethod
     def _is_app_server_installed(processes):
@@ -164,6 +168,49 @@ class NetweaverInstance(object):
         else:
             raise ValueError('provided sap instance type is not valid: {}'.format(sap_instance))
         return state
+
+    @staticmethod
+    def _get_ascs_ensa_version(processes):
+        """
+        Get ASCS ENSA version
+        """
+        if shell.find_pattern(r'enserver, EnqueueServer,.*', processes.output):
+            return 1
+        elif shell.find_pattern(r'enq_server, Enqueue Server 2,.*', processes.output):
+            return 2
+        raise ValueError('ASCS not installed or found')
+
+    @staticmethod
+    def _get_ers_ensa_version(processes):
+        """
+        Get ERS ENSA version
+        """
+        if shell.find_pattern(r'enrepserver, EnqueueReplicator,.*', processes.output):
+            return 1
+        elif shell.find_pattern(r'enq_replicator, Enqueue Replicator 2,.*', processes.output):
+            return 2
+        raise ValueError('ERS not installed or found')
+
+    def get_ensa_version(self, sap_instance):
+        """
+        Get currently installed ENSA version
+
+        Args:
+            sap_instance (str): SAP instance type. Available options: ascs, ers
+
+        Returns:
+            int: Returns the ENSA version number
+
+        Raises:
+            ValueError: ENSA system is not installed or found properly
+        """
+
+        processes = self.get_process_list(exception=True)
+        if sap_instance == 'ascs':
+            return self._get_ascs_ensa_version(processes)
+        elif sap_instance == 'ers':
+            return self._get_ers_ensa_version(processes)
+        raise ValueError('provided sap instance type is not valid: {}'.format(sap_instance))
 
     @staticmethod
     def _remove_old_files(cwd, root_user, password, remote_host):

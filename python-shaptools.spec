@@ -36,6 +36,8 @@ BuildRequires:  %{python_module pytest}
 BuildRequires:  %{python_module setuptools}
 BuildRequires:  fdupes
 BuildRequires:  python-rpm-macros
+Requires(post): update-alternatives
+Requires(postun): update-alternatives
 BuildArch:      noarch
 %python_subpackages
 
@@ -53,6 +55,13 @@ API to expose SAP HANA functionalities
 %python_expand %fdupes %{buildroot}%{$python_sitelib}
 # do not install tests
 %python_expand rm -r %{buildroot}%{$python_sitelib}/tests
+%python_clone -a %{buildroot}%{_bindir}/shapcli
+
+%post
+%python_install_alternative shapcli
+
+%postun
+%python_uninstall_alternative shapcli
 
 %if %{with test}
 %check
@@ -67,6 +76,6 @@ API to expose SAP HANA functionalities
 %license LICENSE
 %endif
 %{python_sitelib}/*
-%python3_only %{_bindir}/shapcli
+%python_alternative %{_bindir}/shapcli
 
 %changelog

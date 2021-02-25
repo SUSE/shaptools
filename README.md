@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/SUSE/shaptools.svg?branch=master)](https://travis-ci.org/SUSE/shaptools)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/1d4f7cd65e061ea100ba/test_coverage)](https://codeclimate.com/github/SUSE/shaptools/test_coverage)
-[![Maintainability](https://api.codeclimate.com/v1/badges/1d4f7cd65e061ea100ba/maintainability)](https://codeclimate.com/github/SUSE/shaptools/maintainability)
+![Formula CI](https://github.com/SUSE/shaptools/workflows/Formula%20CI/badge.svg)
+[![Maintainability](https://api.codeclimate.com/v1/badges/7521df0f216bd2dbed73/maintainability)](https://codeclimate.com/github/SUSE/shaptools/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/7521df0f216bd2dbed73/test_coverage)](https://codeclimate.com/github/SUSE/shaptools/test_coverage)
 
 # SHAPTOOLS
 
@@ -59,5 +59,6 @@ Xabier Arbulu Insausti (xarbulu@suse.com)
 
 ## Reviewers
 
-*Pull request* preferred reviewers for this project:
+_Pull request_ preferred reviewers for this project:
+
 - Xabier Arbulu Insausti (xarbulu@suse.com)

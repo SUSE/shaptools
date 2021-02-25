@@ -1,7 +1,7 @@
 name: Package CI
 # - this workflow will
 # - test python version matrix [2.7, 3.6, 3.7, 3.8, 3.9] for coverage 
-# - uploads coverage data to codeClimate --> Results are linked  as a  badges in the README
+# - uploads coverage data to codeClimate and the results are linked as a badges in the README
 # - deliver the package content to the configured repository
 # - submit the new package content to the upstream repository
 on: [push, pull_request]

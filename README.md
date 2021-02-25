@@ -1,4 +1,4 @@
-![Formula CI](https://github.com/SUSE/shaptools/workflows/Formula%20CI/badge.svg)
+[![Package CI](https://github.com/SUSE/shaptools/actions/workflows/shaptools-ci.yml/badge.svg)](https://github.com/SUSE/shaptools/actions/workflows/shaptools-ci.yml)
 [![Maintainability](https://api.codeclimate.com/v1/badges/7521df0f216bd2dbed73/maintainability)](https://codeclimate.com/github/SUSE/shaptools/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/7521df0f216bd2dbed73/test_coverage)](https://codeclimate.com/github/SUSE/shaptools/test_coverage)
 

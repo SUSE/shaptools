@@ -230,7 +230,7 @@ def uninstall(hana_instance, logger):
         hana_instance.sid, hana_instance.inst)
     response = input()
     if response == 'y':
-        user = hana.HanaInstance.HANAUSER.format(sid=hana_instance.sid)
+        user = hana.HanaInstance.sidadm_user(sid=hana_instance.sid)
         hana_instance.uninstall(user, hana_instance._password)
     else:
         logger.info('Command execution canceled')

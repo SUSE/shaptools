@@ -84,8 +84,6 @@ class HanaInstance(object):
         'x86_64', 'ppc64le'
     ]
     SUPPORTED_SYSTEMS = ['Linux']
-    # SID is usualy written uppercased, but the OS user is always created lower case.
-    HANAUSER = '{sid}adm'.lower()
     SYNCMODES = ['sync', 'syncmem', 'async']
     SUCCESSFULLY_REGISTERED = 0 # Node correctly registered as secondary node
     SSFS_DIFFERENT_ERROR = 149 # ssfs files are different in the two nodes error return code
@@ -102,6 +100,13 @@ class HanaInstance(object):
         self.inst = inst
         self._password = password
         self.remote_host = kwargs.get('remote_host', None)
+
+    @staticmethod
+    def sidadm_user(sid):
+        """
+        Get sidadm user. `{sid}adm` in lower case
+        """
+        return '{sid}adm'.format(sid=sid).lower()
 
     @classmethod
     def get_platform(cls):
@@ -178,7 +183,7 @@ class HanaInstance(object):
                 stdout and stderr
         """
         #TODO: Add absolute paths to hana commands using sid and inst number
-        user = self.HANAUSER.format(sid=self.sid)
+        user = self.sidadm_user(self.sid)
         result = shell.execute_cmd(cmd, user, self._password, self.remote_host)
 
         if exception and result.returncode != 0:
@@ -193,7 +198,7 @@ class HanaInstance(object):
         Returns:
             bool: True if installed, False otherwise
         """
-        user = self.HANAUSER.format(sid=self.sid)
+        user = self.sidadm_user(self.sid)
         try:
             result = shell.execute_cmd('HDB info', user, self._password, self.remote_host)
             return not result.returncode
@@ -443,7 +448,7 @@ class HanaInstance(object):
         Args:
             primary_pass: Password of the primary node
         """
-        user = self.HANAUSER.format(sid=self.sid)
+        user = self.sidadm_user(self.sid)
         sid_upper = self.sid.upper()
         cmd = \
             "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "\

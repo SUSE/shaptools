@@ -208,6 +208,19 @@ class TestHana(unittest.TestCase):
         self.assertEqual(proc_mock, result)
 
     @mock.patch('shaptools.shell.execute_cmd')
+    def test_run_hana_command_uppercase(self, mock_execute):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+
+        mock_execute.return_value = proc_mock
+
+        self._hana = hana.HanaInstance('PRD', 1, 'pass')
+        result = self._hana._run_hana_command('test command')
+
+        mock_execute.assert_called_once_with('test command', 'prdadm', 'pass', None)
+        self.assertEqual(proc_mock, result)
+
+    @mock.patch('shaptools.shell.execute_cmd')
     def test_run_hana_command_error(self, mock_execute):
         proc_mock = mock.Mock()
         proc_mock.returncode = 1

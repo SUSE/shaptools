@@ -1,6 +1,6 @@
 name: Package CI
 # - this workflow will
-# - test python version matrix [2.7, 3.6, 3.7, 3.8, 3.9] for coverage 
+# - test python version matrix [2.7, 3.6, 3.7, 3.8, 3.9] for coverage
 # - uploads coverage data to codeClimate and the results are linked as a badges in the README
 # - deliver the package content to the configured repository
 # - submit the new package content to the upstream repository
@@ -9,10 +9,9 @@ env:
   PACKAGE_NAME: python-shaptools
   TAR_NAME: shaptools
 jobs:
-  
+
   test-python:
     runs-on: ubuntu-18.04
-    if: ${{ github.event_name != 'pull_request' }} 
     strategy:
       matrix:
         os: [ubuntu-18.04]
@@ -24,7 +23,7 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}    
+        python-version: ${{ matrix.python-version }}
     - name: Test python version [2.7, 3.6, 3.7, 3.8, 3.9] and install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -33,7 +32,7 @@ jobs:
       run: py.test -vv --cov=shaptools --cov-config .coveragerc --cov-report term --cov-report xml tests
     - name: Publish code coverage
       uses: paambaati/codeclimate-action@v2.7.5
-      if: env.CC_TEST_REPORTER_ID != null
+      if: ${{ env.CC_TEST_REPORTER_ID != null && github.event_name != 'pull_request' }}
       env:
         CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
       with:
@@ -43,20 +42,20 @@ jobs:
     needs: [test-python]
     runs-on: ubuntu-18.04
     if: ${{ github.event_name != 'pull_request' }}
-    container: 
+    container:
       image: shap/continuous_deliver
       env:
         OBS_USER: ${{ secrets.OBS_USER }}
         OBS_PASS: ${{ secrets.OBS_PASS }}
         OBS_PROJECT: ${{ secrets.OBS_PROJECT }}
     steps:
-    - uses: actions/checkout@v2 
+    - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: configure OSC  
+    - name: configure OSC
     # OSC credentials must be configured beforehand as the HOME variables cannot be changed from /github/home
-    # that is used to run osc commands 
-      run: | 
+    # that is used to run osc commands
+      run: |
         /scripts/init_osc_creds.sh
         mkdir -p $HOME/.config/osc
         cp /root/.config/osc/oscrc $HOME/.config/osc
@@ -64,12 +63,12 @@ jobs:
       run: |
         sed -i 's~%%VERSION%%~${{ github.sha }}~' _service && \
         sed -i 's~%%REPOSITORY%%~${{ github.repository }}~' _service && \
-        /scripts/upload.sh 
+        /scripts/upload.sh
 
   submit:
     needs: [test-python, delivery]
     runs-on: ubuntu-18.04
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}    
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
     container:
       image: shap/continuous_deliver
       env:
@@ -83,8 +82,8 @@ jobs:
         fetch-depth: 0
     - name: configure OSC
     # OSC credentials must be configured beforehand as the HOME variables cannot be changed from /github/home
-    # that is used to run osc commands 
-      run: | 
+    # that is used to run osc commands
+      run: |
         /scripts/init_osc_creds.sh
         mkdir -p $HOME/.config/osc
         cp /root/.config/osc/oscrc $HOME/.config/osc

@@ -61,15 +61,18 @@ class PyhdbConnector(base_connector.BaseConnector):
         try:
             cursor = None
             cursor = self._connection.cursor()
-            cursor.execute(sql_statement)
-            result = base_connector.QueryResult.load_cursor(cursor)
+            # check for cursor.execute() == False
+            # fixes: "shaptools.hdb_connector.connectors.base_connector.QueryError: query failed: (0, 'No result set')"
+            if cursor.execute(sql_statement):
+                result = base_connector.QueryResult.load_cursor(cursor)
+            else:
+                result = base_connector.QueryResult([], ())
         except pyhdb.exceptions.DatabaseError as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
         finally:
             if cursor:
                 cursor.close()
         return result
-
     def disconnect(self):
         """
         Disconnect from SAP HANA database

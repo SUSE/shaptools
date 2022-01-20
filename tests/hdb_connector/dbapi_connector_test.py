@@ -117,6 +117,31 @@ class TestDbapiConnector(unittest.TestCase):
         self.assertEqual(result.metadata, 'metadata')
         mock_logger.assert_called_once_with('executing sql query: %s', 'query')
 
+    @mock.patch('shaptools.hdb_connector.connectors.base_connector.QueryResult')
+    @mock.patch('logging.Logger.info')
+    def test_query_execute_false(self, mock_logger, mock_result):
+        cursor_mock_instance = mock.Mock()
+        cursor_mock = mock.Mock(return_value=cursor_mock_instance)
+        mock_result_inst = mock.Mock()
+        mock_result_inst.records = []
+        mock_result_inst.metadata = ()
+        mock_result.load_cursor.return_value = mock_result_inst
+        context_manager_mock = mock.Mock(
+            __enter__ = cursor_mock,
+            __exit__ = mock.Mock()
+        )
+        self._conn._connection = mock.Mock()
+        self._conn._connection.cursor.return_value = context_manager_mock
+
+        result = self._conn.query('query')
+
+        cursor_mock_instance.execute.assert_called_once_with('query')
+        cursor_mock_instance.execute.return_value = False
+
+        self.assertEqual(result.records, [])
+        self.assertEqual(result.metadata, ())
+        mock_logger.assert_called_once_with('executing sql query: %s', 'query')
+
     @mock.patch('shaptools.hdb_connector.connectors.dbapi_connector.dbapi')
     @mock.patch('logging.Logger.info')
     def test_query_error(self, mock_logger, mock_dbapi):

@@ -65,11 +65,16 @@ class DbapiConnector(base_connector.BaseConnector):
         self._logger.info('executing sql query: %s', sql_statement)
         try:
             with self._connection.cursor() as cursor:
-                cursor.execute(sql_statement)
-                result = base_connector.QueryResult.load_cursor(cursor)
+                # check for cursor.execute() == False
+                # fixes: "shaptools.hdb_connector.connectors.base_connector.QueryError: query failed: (0, 'No result set')"
+                if cursor.execute(sql_statement):
+                    result = base_connector.QueryResult.load_cursor(cursor)
+                else:
+                    result = base_connector.QueryResult([], ())
+                return result
         except dbapi.Error as err:
             raise base_connector.QueryError('query failed: {}'.format(err))
-        return result
+
 
     def disconnect(self):
         """

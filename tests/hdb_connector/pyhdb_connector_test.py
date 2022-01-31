@@ -127,57 +127,29 @@ class TestHDBConnector(unittest.TestCase):
         mock_cursor.close.assert_called_once_with()
 
     @mock.patch('shaptools.hdb_connector.connectors.base_connector.QueryResult')
+    @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.pyhdb')
     @mock.patch('logging.Logger.info')
-    def test_query_execute_false(self, mock_logger, mock_result):
+    def test_query_execute_false(self, mock_logger, mock_pyhdb, mock_result):
+        mock_result.error = Exception
+        mock_pyhdb.exceptions.DatabaseError = Exception
 
         mock_cursor = mock.Mock()
         self._conn._connection = mock.Mock()
         self._conn._connection.cursor.return_value = mock_cursor
 
         mock_result_inst = mock.Mock()
-        mock_result_inst.records = []
-        mock_result_inst.metadata = ()
-        mock_result.load_cursor.return_value = mock_result_inst
+        mock_result.execute.side_effect = mock_pyhdb.exceptions.DatabaseError('error')
 
-        result = self._conn.query('query')
+        with self.assertRaises(self._pyhdb_connector.base_connector.QueryError) as err:
+            self._conn.query('query')
+
+        mock_logger.assert_called_once_with('executing sql query: %s', 'query')
 
         mock_cursor.execute.assert_called_once_with('query')
-        mock_cursor.execute.return_value = False
+        # TODO: test that load_cursor is not loaded
+        #mock_result.load_cursor.return_value = mock_result_inst
 
-        self.assertEqual(result.records, [])
-        self.assertEqual(result.metadata, ())
-        mock_logger.assert_called_once_with('executing sql query: %s', 'query')
         mock_cursor.close.assert_called_once_with()
-
-    @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.pyhdb')
-    @mock.patch('logging.Logger.info')
-    def test_query_error(self, mock_logger, mock_pyhdb):
-        mock_pyhdb.exceptions.DatabaseError = Exception
-        self._conn._connection = mock.Mock()
-        self._conn._connection.cursor.side_effect = Exception('error')
-        with self.assertRaises(self._pyhdb_connector.base_connector.QueryError) as err:
-            self._conn.query('query')
-
-        self.assertTrue('query failed: {}'.format('error') in str(err.exception))
-        self._conn._connection.cursor.assert_called_once_with()
-        mock_logger.assert_called_once_with('executing sql query: %s', 'query')
-
-    @mock.patch('shaptools.hdb_connector.connectors.pyhdb_connector.pyhdb')
-    @mock.patch('logging.Logger.info')
-    def test_query_error_execute(self, mock_logger, mock_pyhdb):
-        mock_pyhdb.exceptions.DatabaseError = Exception
-        self._conn._connection = mock.Mock()
-        cursor_mock = mock.Mock()
-        self._conn._connection.cursor.return_value = cursor_mock
-        cursor_mock.execute = mock.Mock()
-        cursor_mock.execute.side_effect = Exception('error')
-        with self.assertRaises(self._pyhdb_connector.base_connector.QueryError) as err:
-            self._conn.query('query')
-
-        self.assertTrue('query failed: {}'.format('error') in str(err.exception))
-        self._conn._connection.cursor.assert_called_once_with()
-        mock_logger.assert_called_once_with('executing sql query: %s', 'query')
-        cursor_mock.close.assert_called_once_with()
 
     @mock.patch('logging.Logger.info')
     def test_disconnect(self, mock_logger):

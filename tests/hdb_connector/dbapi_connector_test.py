@@ -105,26 +105,48 @@ class TestDbapiConnector(unittest.TestCase):
             __enter__ = cursor_mock,
             __exit__ = mock.Mock()
         )
+
         self._conn._connection = mock.Mock()
         self._conn._connection.cursor.return_value = context_manager_mock
 
         result = self._conn.query('query')
+
+        mock_logger.assert_called_once_with('executing sql query: %s', 'query')
 
         cursor_mock_instance.execute.assert_called_once_with('query')
         mock_result.load_cursor.assert_called_once_with(cursor_mock_instance)
 
         self.assertEqual(result.records, ['data1', 'data2'])
         self.assertEqual(result.metadata, 'metadata')
+
+    @mock.patch('shaptools.hdb_connector.connectors.dbapi_connector.dbapi')
+    @mock.patch('logging.Logger.info')
+    def test_query_connection_failed(self, mock_logger, mock_dbapi):
+        mock_dbapi.Error = DbapiException
+
+        self._conn._connection = mock.Mock()
+
+        self._conn._connection.cursor.side_effect = DbapiException('error')
+
+        with self.assertRaises(self._dbapi_connector.base_connector.ConnectionError) as err:
+            self._conn.query('query')
+
         mock_logger.assert_called_once_with('executing sql query: %s', 'query')
 
+        self.assertTrue('connection failed: {}'.format('error') in str(err.exception))
+        self._conn._connection.cursor.assert_called_once_with()
+
     @mock.patch('shaptools.hdb_connector.connectors.base_connector.QueryResult')
+    @mock.patch('shaptools.hdb_connector.connectors.dbapi_connector.dbapi')
     @mock.patch('logging.Logger.info')
-    def test_query_execute_false(self, mock_logger, mock_result):
+    def test_query_execution_failed(self, mock_logger, mock_dbapi, mock_result):
+        mock_result.Error = DbapiException
         cursor_mock_instance = mock.Mock()
         cursor_mock = mock.Mock(return_value=cursor_mock_instance)
         mock_result_inst = mock.Mock()
-        mock_result_inst.records = []
-        mock_result_inst.metadata = ()
+        mock_result_inst.records = ['data1', 'data2']
+        mock_result_inst.metadata = 'metadata'
+        #mock_result_inst.side_effect = DbapiException('error')
         mock_result.load_cursor.return_value = mock_result_inst
         context_manager_mock = mock.Mock(
             __enter__ = cursor_mock,
@@ -133,27 +155,16 @@ class TestDbapiConnector(unittest.TestCase):
         self._conn._connection = mock.Mock()
         self._conn._connection.cursor.return_value = context_manager_mock
 
-        result = self._conn.query('query')
+        cursor_mock_instance.execute.side_effect = DbapiException('error')
 
-        cursor_mock_instance.execute.assert_called_once_with('query')
-        cursor_mock_instance.execute.return_value = False
-
-        self.assertEqual(result.records, [])
-        self.assertEqual(result.metadata, ())
-        mock_logger.assert_called_once_with('executing sql query: %s', 'query')
-
-    @mock.patch('shaptools.hdb_connector.connectors.dbapi_connector.dbapi')
-    @mock.patch('logging.Logger.info')
-    def test_query_error(self, mock_logger, mock_dbapi):
-        mock_dbapi.Error = DbapiException
-        self._conn._connection = mock.Mock()
-        self._conn._connection.cursor.side_effect = DbapiException('error')
         with self.assertRaises(self._dbapi_connector.base_connector.QueryError) as err:
             self._conn.query('query')
 
-        self.assertTrue('query failed: {}'.format('error') in str(err.exception))
-        self._conn._connection.cursor.assert_called_once_with()
         mock_logger.assert_called_once_with('executing sql query: %s', 'query')
+
+        cursor_mock_instance.execute.assert_called_once_with('query')
+        # TODO: test that load_cursor is not loaded
+        # mock_result.load_cursor.assert_called_once_with(cursor_mock_instance)
 
     @mock.patch('logging.Logger.info')
     def test_disconnect(self, mock_logger):

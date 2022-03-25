@@ -9,12 +9,138 @@ env:
   PACKAGE_NAME: python-shaptools
   TAR_NAME: shaptools
 jobs:
+  tab:
+    name: 'tabspace checking'
+    runs-on: ubuntu-20.04
 
-  test-python:
-    runs-on: ubuntu-18.04
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: tab
+        run: make test-tab
+  codespell:
+    name: 'spell checking'
+    runs-on: ubuntu-20.04
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install linting tools
+        run: |
+          sudo apt-get install -y git python3 python3-pip
+          python3 -m pip install codespell
+
+      - name: codespell
+        run: make test-codespell
+
+  shellcheck:
+    name: 'script syntax check'
+    runs-on: ubuntu-20.04
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install linting tools
+        run: |
+          sudo apt-get install -y git python3 python3-pip shellcheck
+
+      - name: shellcheck
+        run: make test-shellcheck
+
+  yamllint:
+    name: 'yaml linting'
+    runs-on: ubuntu-20.04
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install linting tools
+        run: |
+          sudo apt-get install -y git python3 python3-pip
+          python3 -m pip install codespell
+
+      - name: yamllint
+        run: make test-yamllint
+
+  jsonlint:
+    name: 'json linting'
+    runs-on: ubuntu-20.04
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install linting tools
+        run: |
+          sudo apt-get install -y git python3 python3-pip
+          python3 -m pip install jsonlint
+
+      - name: jsonlint
+        run: make test-jsonlint
+
+  mlc:
+    name: 'markup link checker'
+    runs-on: ubuntu-20.04
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install linting tools
+        run: |
+          mkdir -p bin
+          curl -L https://github.com/becheran/mlc/releases/download/v0.14.3/mlc-x86_64-linux -o bin/mlc
+          chmod +x bin/mlc
+          echo "$PWD/bin" >> $GITHUB_PATH
+
+      - name: mlc
+        run: make test-mlc
+
+  python:
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os: [ubuntu-18.04]
+        os: [ubuntu-20.04]
         python-version: [2.7, 3.6, 3.7, 3.8, 3.9]
     steps:
     - uses: actions/checkout@v2
@@ -29,7 +155,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest pytest-cov mock
     - name: Test with pytest
-      run: py.test -vv --cov=shaptools --cov-config .coveragerc --cov-report term --cov-report xml tests
+      run: make test-python
     - name: Publish code coverage
       uses: paambaati/codeclimate-action@v2.7.5
       if: ${{ env.CC_TEST_REPORTER_ID != null && github.event_name != 'pull_request' }}
@@ -39,8 +165,8 @@ jobs:
         coverageLocations: coverage.xml:coverage.py
 
   delivery:
-    needs: [test-python]
-    runs-on: ubuntu-18.04
+    needs: [tab, codespell, shellcheck, yamllint, jsonlint, mlc, python]
+    runs-on: ubuntu-20.04
     if: ${{ github.event_name != 'pull_request' }}
     container:
       image: shap/continuous_deliver
@@ -66,8 +192,8 @@ jobs:
         /scripts/upload.sh
 
   submit:
-    needs: [test-python, delivery]
-    runs-on: ubuntu-18.04
+    needs: [tab, codespell, shellcheck, yamllint, jsonlint, mlc, python, delivery]
+    runs-on: ubuntu-20.04
     if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
     container:
       image: shap/continuous_deliver

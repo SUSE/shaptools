@@ -320,6 +320,32 @@ class HanaInstance(object):
         if result.returncode:
             raise HanaError('SAP HANA uninstallation failed')
 
+    @classmethod
+    def add_hosts(
+            cls, add_hosts, hdblcm_folder, root_user, root_password, hdb_pwd_file, remote_host=None):
+        """
+        Add additional hosts to SAP HANA system
+
+        Args:
+            add_hosts (str): hosts to add ($host1:role=$role,$host2:role=$role,...)
+            hdblcm_folder (str): Path where hdblcm is installed
+            root_user (str): Root user name
+            root_password (str): Root user password
+            hdb_pwd_file (str): Path to the XML password file
+            remote_host (str, opt): Remote host where the command will be executed
+        """
+
+        if not os.path.isfile(hdb_pwd_file):
+            raise FileDoesNotExistError(
+                'The XML password file \'{}\' does not exist'.format(hdb_pwd_file))
+        executable = cls.find_hana_hdblcm(hdblcm_folder)
+        cmd = 'cat {hdb_pwd_file} | {executable} -b '\
+            '--read_password_from_stdin=xml --action=add_hosts --addhosts={add_hosts}'.format(
+                hdb_pwd_file=hdb_pwd_file, executable=executable, add_hosts=add_hosts)
+        result = shell.execute_cmd(cmd, root_user, root_password, remote_host)
+        if result.returncode:
+            raise HanaError('SAP HANA add_hosts failed')
+
     def is_running(self):
         """
         Check if SAP HANA daemon is running

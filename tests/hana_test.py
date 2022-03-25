@@ -448,6 +448,59 @@ class TestHana(unittest.TestCase):
         self.assertTrue(
             'SAP HANA uninstallation failed' in str(err.exception))
 
+    @mock.patch('shaptools.hana.HanaInstance.find_hana_hdblcm')
+    @mock.patch('shaptools.shell.execute_cmd')
+    @mock.patch('os.path.isfile')
+    def test_add_hosts(self, mock_conf_file, mock_execute, mock_find_hana):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 0
+        mock_conf_file.side_effect = [True, True]
+        mock_execute.return_value = proc_mock
+        mock_find_hana.return_value = 'my_path/hdblcm'
+
+        hana.HanaInstance.add_hosts(
+            'add_hosts', 'hdblcm_folder', 'root', 'pass', 'hdb_pwd_file')
+
+        mock_execute.assert_called_once_with(
+            'cat {hdb_pwd_file} | {executable} -b '
+            '--read_password_from_stdin=xml --action=add_hosts --addhosts={add_hosts}'.format(
+                hdb_pwd_file='hdb_pwd_file', executable='my_path/hdblcm', add_hosts='add_hosts'), 'root', 'pass', None)
+        mock_find_hana.assert_called_once_with('hdblcm_folder')
+
+    @mock.patch('shaptools.hana.HanaInstance.find_hana_hdblcm')
+    @mock.patch('shaptools.shell.execute_cmd')
+    @mock.patch('os.path.isfile')
+    def test_add_hosts_error(self, mock_conf_file, mock_execute, mock_find_hana):
+        proc_mock = mock.Mock()
+        proc_mock.returncode = 1
+        mock_conf_file.side_effect = [True, True]
+        mock_execute.return_value = proc_mock
+        mock_find_hana.return_value = 'my_path/hdblcm'
+
+        with self.assertRaises(hana.HanaError) as err:
+            hana.HanaInstance.add_hosts(
+                'add_hosts', 'hdblcm_folder', 'root', 'pass', 'hdb_pwd_file')
+
+        mock_execute.assert_called_once_with(
+            'cat {hdb_pwd_file} | {executable} -b '
+            '--read_password_from_stdin=xml --action=add_hosts --addhosts={add_hosts}'.format(
+                hdb_pwd_file='hdb_pwd_file', executable='my_path/hdblcm', add_hosts='add_hosts'), 'root', 'pass', None)
+        mock_find_hana.assert_called_once_with('hdblcm_folder')
+
+        self.assertTrue(
+            'SAP HANA add_hosts failed' in str(err.exception))
+
+    @mock.patch('os.path.isfile')
+    def test_add_hosts_xml_FileDoesNotExistError(self, mock_passwords_xml):
+        mock_passwords_xml.side_effect = [False]
+
+        with self.assertRaises(hana.FileDoesNotExistError) as err:
+            hana.HanaInstance.add_hosts(
+                'add_hosts', 'hdblcm_folder', 'root', 'pass', 'hdb_password.xml')
+
+        self.assertTrue(
+            'The XML password file \'{}\' does not exist'.format('hdb_password.xml') in str(err.exception))
+
     @mock.patch('shaptools.shell.execute_cmd')
     def test_is_running(self, mock_execute):
         mock_command = mock.Mock()

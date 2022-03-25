@@ -1,10 +1,11 @@
+---
 name: Package CI
 # - this workflow will
 # - test python version matrix [2.7, 3.6, 3.7, 3.8, 3.9] for coverage
 # - uploads coverage data to codeClimate and the results are linked as a badges in the README
 # - deliver the package content to the configured repository
 # - submit the new package content to the upstream repository
-on: [push, pull_request]
+on: [push, pull_request]  # yamllint disable-line rule:truthy
 env:
   PACKAGE_NAME: python-shaptools
   TAR_NAME: shaptools
@@ -143,26 +144,26 @@ jobs:
         os: [ubuntu-20.04]
         python-version: [2.7, 3.6, 3.7, 3.8, 3.9]
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Test python version [2.7, 3.6, 3.7, 3.8, 3.9] and install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest pytest-cov mock
-    - name: Test with pytest
-      run: make test-python
-    - name: Publish code coverage
-      uses: paambaati/codeclimate-action@v2.7.5
-      if: ${{ env.CC_TEST_REPORTER_ID != null && github.event_name != 'pull_request' }}
-      env:
-        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-      with:
-        coverageLocations: coverage.xml:coverage.py
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test python version [2.7, 3.6, 3.7, 3.8, 3.9] and install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov mock
+      - name: Test with pytest
+        run: make test-python
+      - name: Publish code coverage
+        uses: paambaati/codeclimate-action@v2.7.5
+        if: ${{ env.CC_TEST_REPORTER_ID != null && github.event_name != 'pull_request' }}
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        with:
+          coverageLocations: coverage.xml:coverage.py
 
   delivery:
     needs: [tab, codespell, shellcheck, yamllint, jsonlint, mlc, python]
@@ -175,21 +176,21 @@ jobs:
         OBS_PASS: ${{ secrets.OBS_PASS }}
         OBS_PROJECT: ${{ secrets.OBS_PROJECT }}
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: configure OSC
-    # OSC credentials must be configured beforehand as the HOME variables cannot be changed from /github/home
-    # that is used to run osc commands
-      run: |
-        /scripts/init_osc_creds.sh
-        mkdir -p $HOME/.config/osc
-        cp /root/.config/osc/oscrc $HOME/.config/osc
-    - name: deliver package
-      run: |
-        sed -i 's~%%VERSION%%~${{ github.sha }}~' _service && \
-        sed -i 's~%%REPOSITORY%%~${{ github.repository }}~' _service && \
-        /scripts/upload.sh
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: configure OSC
+        # OSC credentials must be configured beforehand as the HOME variables cannot be changed from /github/home
+        # that is used to run osc commands
+        run: |
+          /scripts/init_osc_creds.sh
+          mkdir -p $HOME/.config/osc
+          cp /root/.config/osc/oscrc $HOME/.config/osc
+      - name: deliver package
+        run: |
+          sed -i 's~%%VERSION%%~${{ github.sha }}~' _service && \
+          sed -i 's~%%REPOSITORY%%~${{ github.repository }}~' _service && \
+          /scripts/upload.sh
 
   submit:
     needs: [tab, codespell, shellcheck, yamllint, jsonlint, mlc, python, delivery]
@@ -203,18 +204,18 @@ jobs:
         OBS_PROJECT: ${{ secrets.OBS_PROJECT}}
         TARGET_PROJECT: ${{ secrets.TARGET_PROJECT}}
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: configure OSC
-    # OSC credentials must be configured beforehand as the HOME variables cannot be changed from /github/home
-    # that is used to run osc commands
-      run: |
-        /scripts/init_osc_creds.sh
-        mkdir -p $HOME/.config/osc
-        cp /root/.config/osc/oscrc $HOME/.config/osc
-    - name: submit package
-      run: |
-       sed -i 's~%%VERSION%%~${{ github.sha }}~' _service && \
-       sed -i 's~%%REPOSITORY%%~${{ github.repository }}~' _service && \
-       /scripts/submit.sh
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: configure OSC
+        # OSC credentials must be configured beforehand as the HOME variables cannot be changed from /github/home
+        # that is used to run osc commands
+        run: |
+          /scripts/init_osc_creds.sh
+          mkdir -p $HOME/.config/osc
+          cp /root/.config/osc/oscrc $HOME/.config/osc
+      - name: submit package
+        run: |
+         sed -i 's~%%VERSION%%~${{ github.sha }}~' _service && \
+         sed -i 's~%%REPOSITORY%%~${{ github.repository }}~' _service && \
+         /scripts/submit.sh

@@ -41,7 +41,7 @@ class NetweaverInstance(object):
         remote_host (str, opt): Remote host where the command will be executed
     """
 
-    # SID is usualy written uppercased, but the OS user is always created lower case.
+    # SID is usually written uppercased, but the OS user is always created lower case.
     NETWEAVER_USER = '{sid}adm'.lower()
     UNINSTALL_PRODUCT = 'NW_Uninstall:GENERIC.IND.PD'
     GETPROCESSLIST_SUCCESS_CODES = [0, 3, 4]

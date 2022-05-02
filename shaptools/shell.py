@@ -39,7 +39,7 @@ class ProcessResult:
     def __init__(self, cmd, returncode, output, err):
         self.cmd = cmd
         self.returncode = returncode
-        self.output = output.decode() # Make it compatiable with python2 and 3
+        self.output = output.decode() # Make it compatible with python2 and 3
         self.err = err.decode()
 
 
@@ -154,7 +154,7 @@ def execute_cmd(cmd, user=None, password=None, remote_host=None):
         shlex.split(cmd),
         stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    # Make it compatiable with python2 and 3
+    # Make it compatible with python2 and 3
     if password:
         password = password.encode()
     out, err = proc.communicate(input=password)

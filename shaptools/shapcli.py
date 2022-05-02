@@ -98,7 +98,7 @@ def parse_arguments():
 
 def parse_hana_arguments(hana_subparser):
     """
-    Parse hana subcommand arguements
+    Parse hana subcommand arguments
     """
     subcommands = hana_subparser.add_subparsers(
         title='hana', dest='hana', help='Commands to interact with SAP HANA databse')
@@ -177,7 +177,7 @@ def parse_hana_arguments(hana_subparser):
 
 def parse_sr_arguments(sr_subparser):
     """
-    Parse hana sr subcommand arguements
+    Parse hana sr subcommand arguments
     """
     subcommands = sr_subparser.add_subparsers(
         title='sr', dest='sr', help='Commands to interact with SAP HANA system replication')

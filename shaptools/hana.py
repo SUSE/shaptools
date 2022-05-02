@@ -560,7 +560,7 @@ class HanaInstance(object):
 
     def check_user_key(self, key_name):
         """
-        Check the use key existance
+        Check the use key existence
 
         Args:
             key (str): Key name

@@ -30,8 +30,10 @@ Group:          Development/Languages/Python
 Url:            https://github.com/SUSE/shaptools
 Source:         %{name}-%{version}.tar.gz
 %if %{with test}
-BuildRequires:  %{python_module mock}
 BuildRequires:  %{python_module pytest}
+%endif
+%ifpython2
+BuildRequires:  python-mock
 %endif
 BuildRequires:  %{python_module setuptools}
 BuildRequires:  fdupes

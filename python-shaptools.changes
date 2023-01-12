@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Jan  5 23:44:22 UTC 2023 - Steve Kowalik <steven.kowalik@suse.com>
+
+- Only BuildRequire python-mock under Python 2.
+
+-------------------------------------------------------------------
 Fri Mar 25 15:45:21 UTC 2021 - Eike Walldt <waldt@b1-systems.de>
 
 - Create version 0.3.13

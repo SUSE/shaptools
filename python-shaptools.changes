@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Fri Jan 13 02:13:36 UTC 2023 - Steve Kowalik <steven.kowalik@suse.com>
+
+- Correct macro usage, %ifpython2 is only suitable for Requires.
+
+-------------------------------------------------------------------
 Thu Jan  5 23:44:22 UTC 2023 - Steve Kowalik <steven.kowalik@suse.com>
 
 - Only BuildRequire python-mock under Python 2.

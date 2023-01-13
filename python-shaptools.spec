@@ -20,6 +20,12 @@
 %bcond_without test
 %endif
 
+%if 0%{?sle_version} <= 150300 && !0%{?is_opensuse}
+%bcond_without python2
+%else
+%bcond_with python2
+%endif
+
 %{?!python_module:%define python_module() python-%{**} python3-%{**}}
 Name:           python-shaptools
 Version:        0
@@ -32,7 +38,7 @@ Source:         %{name}-%{version}.tar.gz
 %if %{with test}
 BuildRequires:  %{python_module pytest}
 %endif
-%ifpython2
+%if %{with python2}
 BuildRequires:  python-mock
 %endif
 BuildRequires:  %{python_module setuptools}

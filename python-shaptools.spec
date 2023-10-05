@@ -52,6 +52,17 @@ BuildArch:      noarch
 %description
 API to expose SAP HANA functionalities
 
+%package -n python3-shaptools-venv-salt-minion
+Summary:        Shaptools integration with Salt Bundle
+Group:          Development/Languages/Python
+Requires:       venv-salt-minion
+Requires:       python3-shaptools
+Supplements:    packageand(python3-shaptools:venv-salt-minion)
+BuildArch:      noarch
+
+%description -n python3-shaptools-venv-salt-minion
+Integration of shaptools library inside the Salt Bundle, aka venv-salt-minion.
+
 %prep
 %setup -q -n %{name}-%{version}
 
@@ -71,6 +82,29 @@ API to expose SAP HANA functionalities
 %postun
 %python_uninstall_alternative shapcli
 
+%post -n python3-shaptools-venv-salt-minion
+BUNDLE_SITELIB=
+if [ -f /usr/lib/venv-salt-minion/bin/python ]
+then
+    BUNDLE_SITELIB=`/usr/lib/venv-salt-minion/bin/python -c "import sysconfig as s; print(s.get_paths().get('purelib'))"`
+fi
+if [ ! -z "$BUNDLE_SITELIB" ] && [ -d "%{python_sitelib}/shaptools" ] && [ ! -f "$BUNDLE_SITELIB/shaptools" ]
+then
+    ln -s %{python_sitelib}/shaptools/ $BUNDLE_SITELIB/shaptools
+fi
+
+%postun -n python3-shaptools-venv-salt-minion
+BUNDLE_SITELIB=
+if [ -f /usr/lib/venv-salt-minion/bin/python ]
+then
+    BUNDLE_SITELIB=`/usr/lib/venv-salt-minion/bin/python -c "import sysconfig as s; print(s.get_paths().get('purelib'))"`
+fi
+if [ ! -z "$BUNDLE_SITELIB" ] && [ -L "$BUNDLE_SITELIB/shaptools" ]
+then
+    rm $BUNDLE_SITELIB/shaptools
+fi
+
+
 %if %{with test}
 %check
 %pytest tests
@@ -85,5 +119,7 @@ API to expose SAP HANA functionalities
 %endif
 %{python_sitelib}/*
 %python_alternative %{_bindir}/shapcli
+
+%files -n python3-shaptools-venv-salt-minion
 
 %changelog

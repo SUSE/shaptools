@@ -7,7 +7,7 @@ Module to utilize SAP Technology components
 
 :since: 2020-03-12
 """
-#TODO: Add support for other SAPCAR functionalties apart from extraction
+#TODO: Add support for other SAPCAR functionalities apart from extraction
 
 import os
 

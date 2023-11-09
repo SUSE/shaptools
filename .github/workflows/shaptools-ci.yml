@@ -10,7 +10,7 @@ name: Package CI
 # - submit the new package content to the upstream repository
 on: [push, pull_request]  # yamllint disable-line rule:truthy
 env:
-  PACKAGE_NAME: salt-shaptools
+  PACKAGE_NAME: shaptools
 jobs:
   tab:
     name: 'tabspace checking'

@@ -1,6 +1,7 @@
 -------------------------------------------------------------------
-Thu Oct  5 14:47:47 UTC 2023 - Pablo Suárez Hernández <psuarezhernandez@suse.com>
+Tue Nov 21 11:22:48 UTC 2023 - Pablo Suárez Hernández <pablo.suarezhernandez@suse.com>
 
+- Create version 0.3.14
 - Make shaptools available for venv-salt-minion (bsc#1212695)
 
 -------------------------------------------------------------------

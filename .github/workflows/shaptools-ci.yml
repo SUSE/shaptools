@@ -10,7 +10,8 @@ name: Package CI
 # - submit the new package content to the upstream repository
 on: [push, pull_request]  # yamllint disable-line rule:truthy
 env:
-  PACKAGE_NAME: shaptools
+  PACKAGE_NAME: python-shaptools
+  TAR_NAME: shaptools
 jobs:
   tab:
     name: 'tabspace checking'

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Nov 21 11:22:48 UTC 2023 - Pablo Suárez Hernández <pablo.suarezhernandez@suse.com>
+
+- Create version 0.3.14
+- Make shaptools available for venv-salt-minion (bsc#1212695)
+
+-------------------------------------------------------------------
 Fri Jan 13 02:13:36 UTC 2023 - Steve Kowalik <steven.kowalik@suse.com>
 
 - Correct macro usage, %ifpython2 is only suitable for Requires.

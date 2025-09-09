@@ -62,4 +62,4 @@ shapcli -c config.json -r remotehost hana version
 If the ssh keys of the current node is not installed in the remote host, the password must be
 provided after the command. To avoid this, the ssh key of the current node can be authorized in the
 remote node. By default, the ssh public key must be added in: `/usr/sap/PRD/home/.ssh/authorized_keys`
-(where `PRD` is the SAP HANA instanse sid in uppercase)
+(where `PRD` is the SAP HANA instance sid in uppercase)

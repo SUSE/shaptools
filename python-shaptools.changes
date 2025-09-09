@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Sep  9 08:55:15 UTC 2025 - Xabier Arbulu <xarbulu@suse.com>
+
+- Create version 0.3.15
+- New version to fix the incorrect submission of the venv-salt-minion
+  usage of the previous 0.3.14 version (bsc#1248174) 
+
+-------------------------------------------------------------------
 Tue Nov 21 11:22:48 UTC 2023 - Pablo Suárez Hernández <pablo.suarezhernandez@suse.com>
 
 - Create version 0.3.14
